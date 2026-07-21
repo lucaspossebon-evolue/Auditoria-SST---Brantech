@@ -123,6 +123,26 @@ body{
 .seg button.sel-NC{background:var(--no-bg); border-color:var(--no); color:var(--no)}
 .seg button.sel-NA{background:var(--na-bg); border-color:var(--na); color:var(--na)}
 
+/* ---------- Anexos ---------- */
+.attach{margin-top:11px;border-top:1px dashed var(--line);padding-top:11px}
+.attach-btn{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--brand);background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:8px 12px;cursor:pointer}
+.attach-btn svg{width:15px;height:15px}
+.attach-btn input{display:none}
+.attach-list{display:flex;flex-wrap:wrap;gap:8px;margin-top:9px}
+.att{display:flex;align-items:center;gap:6px;background:var(--surface-2);border:1px solid var(--line);border-radius:9px;padding:5px 6px 5px 5px;max-width:100%}
+.att-view{display:flex;align-items:center;gap:7px;text-decoration:none;color:var(--text);min-width:0}
+.att img{width:30px;height:30px;border-radius:6px;object-fit:cover;flex:0 0 30px;border:1px solid var(--line)}
+.att .fi{width:30px;height:30px;border-radius:6px;background:var(--no-bg);color:var(--no);font-size:8.5px;font-weight:700;display:grid;place-items:center;flex:0 0 30px}
+.att-name{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:110px}
+.att-x{border:none;background:var(--line-2);color:var(--muted);width:20px;height:20px;border-radius:6px;font-size:11px;cursor:pointer;flex:0 0 20px;display:grid;place-items:center}
+.att-x:active{background:var(--no-bg);color:var(--no)}
+/* Evidências no relatório */
+.nc-ev{margin-top:9px;border-top:1px solid var(--line-2);padding-top:8px}
+.nc-ev .ev-h{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--brand-2);margin-bottom:6px}
+.nc-ev .ev-imgs{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
+.nc-ev .ev-imgs img{height:130px;width:auto;max-width:100%;border:1px solid var(--line);border-radius:6px;object-fit:cover}
+.nc-ev .ev-file{font-size:10.5px;color:var(--muted);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:6px 9px}
+
 /* ---------- Dashboard ---------- */
 .gauge-card{display:flex; align-items:center; gap:16px; padding:18px 16px}
 .gauge{position:relative; width:132px; height:132px; flex:0 0 132px}
@@ -253,6 +273,7 @@ body{
   #scr-relatorio{display:block !important}
   .doc{border:none; box-shadow:none; border-radius:0; padding:0; font-size:11pt}
   .nc,.doc table.t{page-break-inside:avoid}
+  .nc-ev img{max-height:115px}
   .doc h2.s{page-break-after:avoid}
 }
 </style>
@@ -452,9 +473,77 @@ if(!state){
   state = { company:{...EXAMPLE_COMPANY}, answers:{...EXAMPLE_ANSWERS}, plan:{} };
   Store.set('brantech_state', state);
 }
+if(!state.attach) state.attach={};
 let filterBlock = 'all';
 
 function save(){ Store.set('brantech_state', state); }
+
+/* ---------- Anexos: IndexedDB + compressão de imagem ---------- */
+let thumbURL = {};
+let _db;
+function db(){ return new Promise((res,rej)=>{ if(!window.indexedDB) return rej('no-idb'); if(_db) return res(_db);
+  const r=indexedDB.open('brantech',1);
+  r.onupgradeneeded=()=>{ if(!r.result.objectStoreNames.contains('att')) r.result.createObjectStore('att',{keyPath:'id'}); };
+  r.onsuccess=()=>{ _db=r.result; res(_db); };
+  r.onerror=()=>rej(r.error);
+}); }
+function idbPut(rec){ return db().then(d=>new Promise((res,rej)=>{ const t=d.transaction('att','readwrite'); t.objectStore('att').put(rec); t.oncomplete=()=>res(); t.onerror=()=>rej(t.error); })); }
+function idbGet(id){ return db().then(d=>new Promise((res,rej)=>{ const t=d.transaction('att','readonly'); const q=t.objectStore('att').get(id); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error); })); }
+function idbDel(id){ return db().then(d=>new Promise(res=>{ const t=d.transaction('att','readwrite'); t.objectStore('att').delete(id); t.oncomplete=()=>res(); t.onerror=()=>res(); })); }
+function idbClear(){ return db().then(d=>new Promise(res=>{ const t=d.transaction('att','readwrite'); t.objectStore('att').clear(); t.oncomplete=()=>res(); t.onerror=()=>res(); })).catch(()=>{}); }
+function blobToDataURL(blob){ return new Promise(res=>{ const fr=new FileReader(); fr.onload=()=>res(fr.result); fr.onerror=()=>res(null); fr.readAsDataURL(blob); }); }
+function processImage(file){ return new Promise(res=>{
+  const url=URL.createObjectURL(file); const img=new Image();
+  img.onload=()=>{ let w=img.width,h=img.height; const max=1600;
+    if(w>max||h>max){ const sc=Math.min(max/w,max/h); w=Math.round(w*sc); h=Math.round(h*sc); }
+    const c=document.createElement('canvas'); c.width=w; c.height=h;
+    c.getContext('2d').drawImage(img,0,0,w,h);
+    c.toBlob(b=>{ URL.revokeObjectURL(url); res(b||file); },'image/jpeg',0.82);
+  };
+  img.onerror=()=>{ URL.revokeObjectURL(url); res(file); };
+  img.src=url;
+}); }
+async function addFiles(n,files){
+  if(!files||!files.length) return;
+  for(const f of Array.from(files)){
+    const isImg=(f.type||'').indexOf('image')===0;
+    let blob=f;
+    if(isImg){ try{ blob=await processImage(f); }catch(e){ blob=f; } }
+    const id='a'+Date.now().toString(36)+Math.random().toString(36).slice(2,7);
+    const type=(blob&&blob.type)||f.type||'application/octet-stream';
+    try{ await idbPut({id,blob,name:f.name,type}); }
+    catch(e){ toast('Não foi possível salvar o anexo neste aparelho'); return; }
+    try{ thumbURL[id]=URL.createObjectURL(blob); }catch(e){}
+    (state.attach[n]=state.attach[n]||[]).push({id,name:f.name,type,size:(blob&&blob.size)||0,ts:Date.now()});
+  }
+  save(); renderAudit(); toast('Documento anexado');
+}
+async function removeAttach(n,id){
+  try{ await idbDel(id); }catch(e){}
+  if(thumbURL[id]){ try{URL.revokeObjectURL(thumbURL[id]);}catch(e){} delete thumbURL[id]; }
+  state.attach[n]=(state.attach[n]||[]).filter(a=>a.id!==id);
+  save(); renderAudit();
+}
+function attachChips(n){
+  const list=state.attach[n]||[];
+  if(!list.length) return '';
+  return '<div class="attach-list">'+list.map(a=>{
+    const isImg=(a.type||'').indexOf('image')===0;
+    const u=thumbURL[a.id];
+    const thumb = isImg&&u ? `<img src="${u}">` : `<span class="fi">${isImg?'IMG':'PDF'}</span>`;
+    const open = u ? `href="${u}" target="_blank" rel="noopener"` : 'href="#" onclick="return false"';
+    const nm=(a.name||'documento').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    return `<div class="att"><a class="att-view" ${open}>${thumb}<span class="att-name">${nm}</span></a><button class="att-x" title="Remover" onclick="removeAttach(${n},'${a.id}')">✕</button></div>`;
+  }).join('')+'</div>';
+}
+async function hydrateThumbs(){
+  const ids=[];
+  Object.values(state.attach||{}).forEach(arr=>(arr||[]).forEach(a=>ids.push(a.id)));
+  let any=false;
+  for(const id of ids){ if(thumbURL[id])continue; try{ const rec=await idbGet(id); if(rec&&rec.blob){ thumbURL[id]=URL.createObjectURL(rec.blob); any=true; } }catch(e){} }
+  if(any) renderAudit();
+}
+function clearThumbs(){ Object.values(thumbURL).forEach(u=>{try{URL.revokeObjectURL(u);}catch(e){}}); thumbURL={}; }
 
 /* ============================================================
    CÁLCULOS
@@ -525,6 +614,14 @@ function renderAudit(){
           <button class="${a==='C'?'sel-C':''}" onclick="answer(${it.n},'C')"><span class="ic">✓</span> Conforme</button>
           <button class="${a==='NC'?'sel-NC':''}" onclick="answer(${it.n},'NC')"><span class="ic">✕</span> Não conf.</button>
           <button class="${a==='NA'?'sel-NA':''}" onclick="answer(${it.n},'NA')"><span class="ic">–</span> N/A</button>
+        </div>
+        <div class="attach">
+          <label class="attach-btn">
+            <input type="file" accept="image/*,application/pdf" multiple onchange="addFiles(${it.n},this.files)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.44 11.05l-9.19 9.19a5 5 0 0 1-7.07-7.07l9.19-9.19a3 3 0 0 1 4.24 4.24l-9.2 9.19a1 1 0 0 1-1.41-1.41l8.49-8.49"/></svg>
+            Anexar documento
+          </label>
+          ${attachChips(it.n)}
         </div>
       </div>`;
     });
@@ -638,13 +735,33 @@ function setPlan(n,k,v){ state.plan[n]=state.plan[n]||{}; state.plan[n][k]=v; sa
 /* ============================================================
    RENDER — Relatório executivo
    ============================================================ */
-function renderReport(){
+async function renderReport(){
   const s=stats(); const b=band(s.idx); const c=state.company;
   const dataFmt = c.data ? c.data.split('-').reverse().join('/') : '[Data]';
   const ncs=ITEMS.filter(it=>state.answers[it.n]==='NC');
   const order={Alta:0,Média:1,Baixa:2};
   ncs.sort((a,b)=> order[a.pri]-order[b.pri] || a.n-b.n);
   const pcls={'Alta':'alta','Média':'media','Baixa':'baixa'};
+
+  // Pré-carrega imagens de evidência das NCs para embutir no relatório/PDF
+  const evMap={};
+  for(const it of ncs){
+    for(const a of (state.attach[it.n]||[])){
+      if((a.type||'').indexOf('image')===0){
+        try{ const rec=await idbGet(a.id); if(rec&&rec.blob) evMap[a.id]=await blobToDataURL(rec.blob); }catch(e){}
+      }
+    }
+  }
+  const evBlock=(n)=>{
+    const list=state.attach[n]||[];
+    if(!list.length) return '';
+    const inner=list.map(a=>{
+      const nm=(a.name||'documento').replace(/</g,'&lt;');
+      if((a.type||'').indexOf('image')===0 && evMap[a.id]) return `<img src="${evMap[a.id]}" alt="${nm.replace(/"/g,'&quot;')}">`;
+      return `<span class="ev-file">${nm}</span>`;
+    }).join('');
+    return `<div class="nc-ev"><div class="ev-h">Evidências anexadas (${list.length})</div><div class="ev-imgs">${inner}</div></div>`;
+  };
 
   // Tabela por bloco
   let blockRows='';
@@ -671,6 +788,7 @@ function renderReport(){
             <div class="row"><span class="lab">Pode ser exigido por:</span> ${it.org}</div>
             <div class="row"><span class="lab">Ação corretiva recomendada:</span> ${it.acao}</div>
           </dl>
+          ${evBlock(it.n)}
         </div>`;
       });
     });
@@ -788,12 +906,14 @@ function go(id){
    ============================================================ */
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); }
 function loadExample(){
-  state={ company:{...EXAMPLE_COMPANY}, answers:{...EXAMPLE_ANSWERS}, plan:{} };
+  clearThumbs(); idbClear();
+  state={ company:{...EXAMPLE_COMPANY}, answers:{...EXAMPLE_ANSWERS}, plan:{}, attach:{} };
   save(); refreshAll(); toast('Exemplo carregado'); go('painel');
 }
 function resetAudit(){
   if(!confirm('Iniciar nova auditoria? As respostas atuais serão apagadas.')) return;
-  state={ company:{razao:'',cnpj:'',endereco:'',atividade:'Fabricação de móveis sob encomenda',grau:'',empregados:'',data:'',auditor:'',cargo:'',representante:''}, answers:{}, plan:{} };
+  clearThumbs(); idbClear();
+  state={ company:{razao:'',cnpj:'',endereco:'',atividade:'Fabricação de móveis sob encomenda',grau:'',empregados:'',data:'',auditor:'',cargo:'',representante:''}, answers:{}, plan:{}, attach:{} };
   save(); refreshAll(); toast('Nova auditoria iniciada'); go('empresa');
 }
 function refreshAll(){ renderTopIndex(); renderFilters(); renderAudit(); renderNavBadge(); }
@@ -805,6 +925,7 @@ renderNav();
 refreshAll();
 renderTopIndex();
 document.querySelectorAll(".brand-logo:not(.rep-logo)").forEach(i=>i.src=LOGO);
+hydrateThumbs();
 </script>
 <script>
 if('serviceWorker' in navigator){
