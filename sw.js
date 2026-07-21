@@ -1,7 +1,7 @@
 /* Brantech Auditoria SST — service worker
    Cache-first para o app (funciona offline em campo).
    Suba uma nova versão trocando o número em CACHE quando editar o app. */
-const CACHE = 'brantech-sst-v2';
+const CACHE = 'brantech-sst-v3';
 const FONTS = 'brantech-fonts-v1';
 const SHELL = [
   './',
