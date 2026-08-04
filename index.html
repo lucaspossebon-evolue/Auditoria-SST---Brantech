@@ -56,10 +56,10 @@ body{
 .app{max-width:520px; margin:0 auto; min-height:100vh; background:var(--paper); position:relative; padding-bottom:78px}
 
 /* ---------- Top bar ---------- */
+.appbar{position:sticky; top:0; z-index:40; box-shadow:0 2px 14px rgba(7,40,35,.18)}
 .topbar{
-  position:sticky; top:0; z-index:40; background:var(--brand);
+  background:var(--brand);
   color:#EAF3F0; padding:12px 16px 12px; display:flex; align-items:center; gap:11px;
-  box-shadow:0 2px 14px rgba(7,40,35,.18);
 }
 .logo{display:flex; align-items:center; gap:9px; min-width:0}
 .mark{width:30px;height:30px;flex:0 0 30px;border-radius:8px;background:linear-gradient(150deg,#1FA97F,#0B3B34);display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.14)}
@@ -92,7 +92,7 @@ body{
 .pad{padding:15px}
 
 /* ---------- Progress on audit ---------- */
-.prog{position:sticky; top:104px; z-index:20; background:var(--paper); padding:4px 2px 12px; margin:-4px -2px 4px}
+.prog{position:sticky; top:var(--appbarH,92px); z-index:20; background:var(--paper); padding:4px 2px 12px; margin:-4px -2px 4px}
 .prog-row{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:7px}
 .prog-row .a{font-family:var(--disp); font-weight:600; font-size:14px}
 .prog-row .b{font-size:12px; color:var(--muted)}
@@ -269,6 +269,14 @@ body{
 .credit b{color:var(--muted);font-weight:600}
 .rep-credit{text-align:center;font-size:9.5px;color:var(--faint);margin-top:10px;letter-spacing:.02em}
 
+.model-sel{display:grid;gap:9px}
+.model-opt{text-align:left;border:1.5px solid var(--line);background:var(--surface);border-radius:11px;padding:12px 14px;cursor:pointer;display:flex;flex-direction:column;gap:3px;transition:.15s;width:100%;font-family:var(--body)}
+.model-opt:active{transform:scale(.99)}
+.model-opt.on{border-color:var(--brand);background:var(--surface-2);box-shadow:inset 0 0 0 1px var(--brand)}
+.model-opt .mo-name{font-weight:600;font-size:14px;color:var(--text)}
+.model-opt.on .mo-name{color:var(--brand)}
+.model-opt .mo-meta{font-size:11.5px;color:var(--muted)}
+
 /* ---------- Bottom nav ---------- */
 .nav{position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:520px; background:rgba(255,255,255,.94); backdrop-filter:blur(12px); border-top:1px solid var(--line); display:grid; grid-template-columns:repeat(5,1fr); z-index:50; padding-bottom:env(safe-area-inset-bottom)}
 .nav button{background:none; border:none; padding:9px 2px 8px; display:flex; flex-direction:column; align-items:center; gap:3px; cursor:pointer; color:var(--faint); font-family:var(--body); position:relative}
@@ -286,7 +294,7 @@ body{
 /* ---------- Print ---------- */
 @media print{
   body{background:#fff}
-  .topbar,.subbar,.nav,.rep-toolbar,.rep-note,.toast{display:none !important}
+  .appbar,.topbar,.subbar,.nav,.rep-toolbar,.rep-note,.toast{display:none !important}
   .app{max-width:100%; padding:0}
   .screen{display:none !important; padding:0}
   #scr-relatorio{display:block !important}
@@ -301,6 +309,7 @@ body{
 <div class="app">
 
   <!-- TOP BAR -->
+  <div class="appbar">
   <header class="topbar">
     <div class="logo-wrap"><img class="brand-logo" alt="Brantech — Engenharia de Segurança do Trabalho"></div>
     <span class="app-tag">Auditoria SST</span>
@@ -310,10 +319,15 @@ body{
     </div>
   </header>
   <div class="subbar"><span class="dot"></span><b id="sub-empresa">—</b><span id="sub-prog" style="margin-left:auto;flex:0 0 auto"></span></div>
+  </div>
 
   <!-- ===== EMPRESA ===== -->
   <section class="screen" id="scr-empresa">
     <div class="scr-head"><h1>Identificação da auditoria</h1><p>Dados que alimentam o cabeçalho do relatório executivo.</p></div>
+    <div class="card pad" style="margin-bottom:14px">
+      <label style="display:block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:9px">Modelo de auditoria</label>
+      <div class="model-sel" id="model-sel"></div>
+    </div>
     <div class="card pad">
       <div class="form-grid" id="ident-form"></div>
     </div>
@@ -349,7 +363,7 @@ body{
       <div class="gauge-meta" id="gauge-meta"></div>
     </div>
     <div class="statgrid" id="statgrid"></div>
-    <div class="sec-title">Não conformidades por prioridade</div>
+    <div class="sec-title" id="pri3-sec">Não conformidades por prioridade</div>
     <div class="pri3" id="pri3"></div>
     <div class="sec-title">Conformidade por bloco temático</div>
     <div class="card pad"><div class="blockbars" id="blockbars"></div></div>
@@ -385,7 +399,7 @@ const LOGO="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAO0AAABYCAYAAAAZSnBJAA
    pri: prioridade de regularização caso o item seja NC
    acao: ação corretiva recomendada (entra no plano e no relatório)
    ============================================================ */
-const BLOCKS = [
+const M1_BLOCKS = [
   "1. Documentação Legal Geral",
   "2. NR-12 (Máquinas — Marcenaria)",
   "3. Riscos Físicos e Químicos",
@@ -395,7 +409,7 @@ const BLOCKS = [
   "7. Governança Documental"
 ];
 
-const ITEMS = [
+const M1_ITEMS = [
  {n:1,b:0,nr:"NR-01",req:"PGR (Programa de Gerenciamento de Riscos) elaborado, atualizado e assinado por responsável técnico.",doc:"PGR completo (inventário de riscos + plano de ação), com data e assinatura do responsável técnico.",org:"MTE / MPT",pri:"Alta",acao:"Elaborar/atualizar o PGR (inventário de riscos + plano de ação), com assinatura do responsável técnico."},
  {n:2,b:0,nr:"NR-01",req:"Ordens de Serviço sobre segurança e saúde emitidas e assinadas por todos os empregados.",doc:"Ordem de Serviço geral e por função, com assinatura de recebimento de cada empregado.",org:"MTE / MPT / Sindicato",pri:"Alta",acao:"Emitir Ordem de Serviço geral e específica por função, colhendo assinatura de todos os empregados."},
  {n:3,b:0,nr:"NR-07",req:"PCMSO elaborado, vigente e assinado por médico coordenador.",doc:"PCMSO vigente, com relatório analítico anual e ART/CRM do médico coordenador.",org:"MTE / MPT / INSS",pri:"Alta",acao:"Elaborar/atualizar o PCMSO vigente, com relatório analítico anual e ART/CRM do médico coordenador."},
@@ -450,7 +464,115 @@ const ITEMS = [
 ];
 
 /* Respostas do EXEMPLO (indústria moveleira) */
-const EXAMPLE_ANSWERS = {1:'C',2:'NC',3:'C',4:'NC',5:'C',6:'NC',7:'C',8:'C',9:'NC',10:'NC',11:'NC',12:'C',13:'NC',14:'C',15:'C',16:'C',17:'NC',18:'C',19:'NC',20:'NC',21:'NC',22:'C',23:'NC',24:'C',25:'NC',26:'NC',27:'C',28:'NC',29:'C',30:'NC',31:'C',32:'NA',33:'NC',34:'C',35:'C',36:'C',37:'NC',38:'NA',39:'C',40:'NC',41:'C',42:'C',43:'NC',44:'NC',45:'C'};
+const M1_EXAMPLE = {1:'C',2:'NC',3:'C',4:'NC',5:'C',6:'NC',7:'C',8:'C',9:'NC',10:'NC',11:'NC',12:'C',13:'NC',14:'C',15:'C',16:'C',17:'NC',18:'C',19:'NC',20:'NC',21:'NC',22:'C',23:'NC',24:'C',25:'NC',26:'NC',27:'C',28:'NC',29:'C',30:'NC',31:'C',32:'NA',33:'NC',34:'C',35:'C',36:'C',37:'NC',38:'NA',39:'C',40:'NC',41:'C',42:'C',43:'NC',44:'NC',45:'C'};
+
+/* ===== Modelo 2 — Auditoria SST Geral (planilha PGR/PGRTR) ===== */
+const M2_BLOCKS = [
+  "Gestão SST e eSocial",
+  "Saúde Preventiva (Lei 15.377/2026)",
+  "Riscos Físicos",
+  "Riscos Químicos",
+  "Ergonomia",
+  "Segurança e Acidentes",
+  "Riscos Psicossociais",
+  "Treinamentos",
+  "EPIs, EPCs e CIPA",
+  "Cultura de SST e Desenvolvimento de Cultura",
+  "Ordens de Serviço",
+  "Procedimentos em Caso de Acidentes",
+  "Gestão das Documentações Digitais e Físicas",
+  "Assédio Moral e Sexual",
+  "Programa de Gerenciamento de Riscos (PGR)",
+  "Enquadramento dos Profissionais de SST",
+  "Enquadramento de CIPA",
+  "Mapa de Riscos",
+  "Equipamentos de Proteção Individual",
+  "Gerenciamento dos Exames conforme PCMSO",
+  "Campanhas de Promoção à Saúde",
+  "Relatório Analítico",
+  "Primeiros Socorros",
+  "Comunicação de Acidente de Trabalho",
+  "Programa de Conservação Auditiva",
+  "Programa de Proteção Respiratória",
+  "Avaliações de Estruturas (Piso, Paredes, Telhados)",
+  "Riscos Elétricos",
+  "Movimentação de Cargas",
+  "Máquinas e Equipamentos",
+  "Compressores e Vasos de Pressão",
+  "Agentes Insalubres",
+  "Agentes Periculosos",
+  "Agentes Ergonômicos",
+  "Trabalho a Céu Aberto",
+  "Combate a Incêndio",
+  "Condições Sanitárias",
+  "Sinalização",
+  "Perfil Profissiográfico Previdenciário"
+];
+
+const M2_ITEMS = [
+ {n:1,b:0,req:"O PGR está atualizado, contemplando o Inventário de Riscos de todos os setores (Administrativo, Produção, Montagem, Instalação)?",risco:"Multa MTE, MPT, Invalidação da Gestão de Riscos",acao:"1. Contratar profissional habilitado para reavaliar todos os setores, contemplando as exposições reais (ruído, calor, agentes químicos como xileno/etilbenzeno, riscos ergonômicos e trabalhos em altura); 2. Elaborar o Inventário de Riscos completo; 3. Conforme NR-01, informar formalmente os trabalhadores quanto aos procedimentos e limitações das medidas de prevenção adotadas."},
+ {n:2,b:0,req:"O PCMSO está alinhado aos riscos físicos, químicos, ergonômicos e psicossociais identificados no PGR?",risco:"Multa MTE, Descaracterização de ASO, Autuação Previdenciária",acao:"1. O Médico Coordenador deve cruzar a matriz de exames com os agentes específicos mapeados (audiometrias, exames laboratoriais para exposição a solventes e químicos, avaliações ergonômicas e de saúde mental); 2. Integrar as ações de saúde ocupacional às medidas de prevenção da empresa."},
+ {n:3,b:0,req:"O LTCAT está vigente e assinado por Engenheiro ou Médico do Trabalho?",risco:"Autuação INSS, Falha no evento S-2240 do eSocial, Passivo Trabalhista",acao:"1. Solicitar emissão/revisão do LTCAT com medições quantitativas oficiais para ruído, calor e agentes químicos (solventes, fumos metálicos); 2. Assegurar que o laudo sirva de base estrita para o PPP Eletrônico e envios do eSocial."},
+ {n:4,b:0,req:"Os eventos S-2240, S-2220 e S-2210 do eSocial estão sendo transmitidos corretamente e nos prazos legais?",risco:"Multas automáticas da Receita Federal e eSocial, Autuação MTE",acao:"1. Realizar auditoria cruzando a folha de pagamento e os ASOs com os recibos do S-2240 (condições ambientais), S-2220 (saúde) e S-2210 (CAT); 2. Configurar alertas para envio de ASOs até o dia 15 e CATs até o 1º dia útil seguinte."},
+ {n:5,b:1,req:"A empresa disponibiliza informações e campanhas oficiais sobre vacinação, HPV e cânceres (mama, colo do útero e próstata)?",risco:"Multa MTE, Responsabilidade civil por omissão em saúde pública",acao:"1. Estruturar protocolo de comunicação interna (murais, e-mails, cartilhas) com informações do Ministério da Saúde sobre vacinação, HPV, câncer de mama, colo do útero e próstata; 2. Promover campanhas de conscientização orientando sobre serviços de diagnóstico; 3. Arquivar comprovantes das divulgações."},
+ {n:6,b:1,req:"A empresa informa formalmente aos empregados o direito de ausência remunerada de até 3 dias anuais para exames preventivos (HPV e cânceres)?",risco:"Passivo trabalhista, Autuação MTE, Óbice ao direito do trabalhador",acao:"1. Atualizar políticas de RH e manuais internos informando expressamente o direito de ausência de até 3 dias a cada 12 meses, sem prejuízo salarial, para exames preventivos de HPV e cânceres; 2. Estabelecer fluxo desburocratizado de comprovação posterior."},
+ {n:7,b:2,req:"As avaliações quantitativas de Ruído Contínuo/Intermitente e Calor estão válidas para os setores de Produção e Montagem?",risco:"Adicional de insalubridade retroativo, Aposentadoria Especial",acao:"1. Contratar laboratório acreditado para medições de ruído (dosimetrias) e sobrecarga térmica (IBUTG); 2. Implantar medidas de proteção coletiva (exaustão, isolamento acústico) e fornecer EPIs adequados (protetores auriculares e vestimentas térmicas), informando os trabalhadores sobre eficácia e limitações."},
+ {n:8,b:3,req:"Os agentes químicos mapeados (Xileno, Etilbenzeno, Acetato de Etilglicol, N-butanol, Cromo, Manganês, Hidróxido de Sódio) possuem FISPQs e avaliações quantitativas?",risco:"Multa MTE, Ação civil pública do MPT, Insalubridade grau máximo",acao:"1. Requisitar FISPQs atualizadas (padrão GHS) de todos os solventes e produtos químicos utilizados na produção/pintura; 2. Executar dosimetrias e amostragens de ar (bombas gravimétricas) para vapores orgânicos e fumos metálicos; 3. Fornecer respiradores com filtros químicos adequados, providenciando treinamento obrigatório de uso e guarda."},
+ {n:9,b:4,req:"A Avaliação Ergonômica Preliminar (AEP) e AET (se aplicável) contemplam as posturas (sentada/pé), levantamento de peso e movimentos repetitivos?",risco:"Afastamentos por LER/DORT, Multa MTE, Ação do MPT",acao:"1. Executar AEP para os postos de montagem, produção e administrativo; 2. Adequar o transporte manual de cargas e introduzir auxílios mecânicos e pausas para evitar sobrecarga estática e movimentos repetitivos excessivos; 3. Orientar formalmente os trabalhadores sobre posturas seguras."},
+ {n:10,b:5,req:"Os trabalhos em altura (>2m), operações com ferramentas manuais, eletricidade e trânsito de veículos possuem procedimentos e proteções adequadas?",risco:"Embargo de atividades, Acidente grave/fatal, Responsabilidade criminal",acao:"1. Implantar Permissão de Trabalho (PT) e sistemas de ancoragem certificados para montadores externos e trabalhos em altura; 2. Inspecionar ferramentas manuais e dispositivos elétricos regularmente; 3. Garantir demarcação de trânsito de veículos e EPIs específicos (óculos contra projeção de partículas, calçados de segurança)."},
+ {n:11,b:6,req:"Os fatores de risco psicossociais (exigência de atenção, concentração, ritmo e estresse) e canais de assédio estão implantados?",risco:"Multa MTE, Ação MPT, Síndrome de Burnout, Passivo Trabalhista",acao:"1. Incluir fatores psicossociais (exigência cognitiva, ritmo e pressão) no inventário do PGR; 2. Implantar canal de denúncias anônimo e seguro para prevenção e combate ao assédio (Lei 14.457/2022); 3. Integrar ações de saúde mental ao PCMSO e orientar os colaboradores sobre gestão do estresse."},
+ {n:12,b:7,req:"Os treinamentos obrigatórios (Integração NR-01, NR-10, NR-11, NR-12, NR-35) estão dentro da validade e documentados?",risco:"Invalidação jurídica, Multas por empregado não treinado, Interdição",acao:"1. Implantar matriz de controle de vencimento de reciclagens normativas; 2. Garantir que os certificados contenham carga horária, conteúdo, qualificação do instrutor e assinaturas; 3. Dar ciência expressa aos trabalhadores sobre os riscos das funções."},
+ {n:13,b:8,req:"A gestão de EPIs (Fichas com CA válido), manutenção de EPCs e constituição da CIPA/Designado estão regulares?",risco:"Condenação ao pagamento de insalubridade, Multa MTE",acao:"1. Atualizar fichas de controle de EPI com registro de CA válido, data e assinatura; 2. Garantir manutenção preventiva de exaustores e proteções coletivas; 3. Manter CIPA regular com reuniões mensais documentadas e mapas de risco atualizados."},
+ {n:14,b:9,req:"A gestão de treinamentos para desenvolvimento de cultura de segurança do trabalho e atendimento básico às normas de segurança do trabalho está implantada?",risco:"Fragilidade da cultura de segurança, aumento da taxa de acidentes, autuação MTE por descumprimento da NR-01 (item 1.4), responsabilidade civil do empregador",acao:"1. Elaborar Programa de Desenvolvimento de Cultura de Segurança, com diagnóstico do clima organizacional e plano de ação anual; 2. Implantar treinamentos periódicos de integração e reciclagem (NR-01, item 1.4), Diálogos Diários de Segurança (DDS) e campanhas temáticas; 3. Definir indicadores de acompanhamento (taxa de frequência, taxa de gravidade, absenteísmo, participação em treinamentos) com metas semestrais. Prazo: 90 dias. Responsável: Técnico de Segurança do Trabalho. Evidência: cronograma anual, registros de DDS e relatórios de indicadores."},
+ {n:15,b:10,req:"As Ordens de Serviço (OS) estão emitidas, atualizadas e com ciência formal dos trabalhadores?",risco:"Autuação MTE por descumprimento da NR-01 (item 1.7 - Ordem de Serviço), responsabilização por acidentes por ausência de ciência formal dos riscos, fragilidade das defesas administrativas",acao:"1. Elaborar Ordens de Serviço (OS) individualizadas por função, contemplando riscos ocupacionais, medidas de prevenção adotadas e EPIs obrigatórios, conforme NR-01, item 1.7; 2. Promover ciência formal e expressa de cada trabalhador, com assinatura e data, arquivando cópias por prazo legal; 3. Atualizar as OS sempre que houver mudança de função, setor, processo ou risco identificado. Prazo: 60 dias. Responsável: SESMT. Evidência: OS assinadas e arquivadas."},
+ {n:16,b:11,req:"Existem procedimentos formais e documentados para atendimento em caso de acidentes?",risco:"Agravamento de lesões por atendimento inadequado, autuação MTE por descumprimento da NR-01 (item 1.4.1) e NR-07, responsabilidade civil e criminal por omissão de socorro",acao:"1. Elaborar procedimento operacional padrão (POP) de atendimento a acidentes e emergências, conforme NR-01, item 1.4.1, e NR-07, item 7.5; 2. Capacitar equipe de primeiros socorros com reciclagem periódica e disponibilizar caixa de primeiros socorros conforme Anexo I da NR-07; 3. Realizar simulações de emergência semestrais com registro fotográfico e lista de presença. Prazo: 60 dias. Responsável: CIPA e SESMT. Evidência: POP, certificados de treinamento e registros de simulação."},
+ {n:17,b:12,req:"A organização das documentações em meio digital e a avaliação das informações físicas estão adequadas para melhor gerenciamento?",risco:"Perda de evidências documentais em fiscalizações, autuação por não apresentação de documentos, descaracterização de defesas administrativas, passivo trabalhista e previdenciário",acao:"1. Implantar sistema de gestão documental digital com indexação, controle de versões e prazos de validade dos documentos de SST (PGR, PCMSO, LTCAT, PPP, OS, fichas de EPI, certificados de treinamento); 2. Digitalizar os documentos físicos existentes com backup e controle de acesso; 3. Estabelecer fluxo de atualização documental com responsável definido e calendário de revisões. Prazo: 120 dias. Responsável: Gestor de SST. Evidência: repositório digital organizado e trilha de auditoria."},
+ {n:18,b:13,req:"A empresa, por possuir CIPA, desenvolve o tema assédio moral e sexual conforme obrigatoriedade legal?",risco:"Multa administrativa por descumprimento da Lei 14.457/2022 e CLT (art. 223-A e seguintes), dano moral coletivo (ação civil pública MPT), responsabilidade civil por danos morais individuais, passivo trabalhista",acao:"1. Implantar Programa de Prevenção e Enfrentamento ao Assédio Moral e Sexual, conforme Lei 14.457/2022, com regulamento interno; 2. Realizar treinamentos obrigatórios para CIPA e lideranças, com conteúdo programático específico; 3. Estruturar canal de denúncias anônimo, fluxo de apuração sigiloso e medidas disciplinares; 4. Registrar e arquivar todas as ações com evidências. Prazo: 90 dias. Responsável: RH e CIPA. Evidência: regulamento, certificados e registros do canal de denúncias."},
+ {n:19,b:14,req:"O PGR está elaborado e mantido atualizado?",risco:"Autuação MTE por descumprimento da NR-01, invalidação da gestão de riscos, agravamento de responsabilidade em acidentes, passivo trabalhista e previdenciário",acao:"1. Elaborar/revisar o PGR conforme NR-01, contemplando inventário de riscos de todos os setores e plano de ação; 2. Garantir revisão periódica (no mínimo anual e antecipada quando houver mudanças significativas); 3. Dar ciência formal aos trabalhadores sobre riscos e medidas de prevenção, com registro documental. Prazo: 90 dias. Responsável: Profissional habilitado (Engenheiro/Técnico de Segurança do Trabalho). Evidência: PGR vigente assinado e registros de ciência."},
+ {n:20,b:14,req:"Existe plano de ação com cronograma e evidências?",risco:"Autuação MTE por ausência de implementação das medidas de prevenção, agravamento dos riscos, responsabilidade por acidentes, descaracterização da gestão de SST",acao:"1. Desenvolver plano de ação com cronograma físico-financeiro, priorizando os riscos críticos; 2. Definir responsáveis, prazos e recursos para cada medida; 3. Registrar evidências de execução (fotos, relatórios, notas fiscais) e acompanhar mensalmente com relatório de status. Prazo: 30 dias para elaboração. Responsável: Coordenador de SST. Evidência: plano de ação preenchido e relatórios mensais."},
+ {n:21,b:14,req:"O gerenciamento de ações e evidências do desenvolvimento do PGR está implantado?",risco:"Perda de rastreabilidade das ações, autuação MTE por ausência de evidências, fragilidade jurídica em fiscalizações e ações trabalhistas",acao:"1. Implantar sistema de monitoramento contínuo das ações do PGR com matriz de responsabilidades; 2. Realizar reuniões periódicas de acompanhamento com atas; 3. Manter registro de evidências (documental e fotográfico) de cada ação implementada, auditável em fiscalizações. Prazo: imediato, com revisão mensal. Responsável: Gestor de SST. Evidência: atas de reunião e dossiê de evidências."},
+ {n:22,b:14,req:"O gerenciamento de ações e evidências dos riscos psicossociais e o desenvolvimento das ações do PGR/plano específico de desenvolvimento da NR-01 interno (anual) estão implantados?",risco:"Autuação MTE por não gerenciamento dos riscos psicossociais (NR-01, item 1.5.4.4.2), afastamentos por transtornos mentais, ação civil pública MPT, passivo trabalhista",acao:"1. Incluir fatores de risco psicossociais no inventário do PGR, conforme NR-01, item 1.5.4.4.2; 2. Elaborar plano específico anual de desenvolvimento da NR-01 com ações de prevenção ao estresse, assédio e sobrecarga; 3. Implantar canal de acolhimento e monitorar indicadores de saúde mental (afastamentos, queixas); 4. Registrar evidências das ações executadas. Prazo: 120 dias. Responsável: SESMT e RH. Evidência: inventário atualizado e plano anual."},
+ {n:23,b:15,req:"O enquadramento para contratação de profissional específico está conforme a obrigatoriedade legal?",risco:"Autuação MTE por descumprimento da NR-04 (SESMT), ausência de profissional habilitado, agravamento de penalidades em acidentes, responsabilidade técnica",acao:"1. Realizar dimensionamento do SESMT conforme NR-04, Quadro II, considerando grau de risco 3 e 215 empregados; 2. Contratar profissional habilitado (Técnico/Engenheiro de Segurança do Trabalho) na carga horária obrigatória; 3. Registrar documentação de habilitação e jornada de trabalho do profissional. Prazo: 60 dias. Responsável: Diretoria. Evidência: contrato de prestação de serviços e registro de frequência."},
+ {n:24,b:16,req:"O enquadramento para constituição de CIPA ou designação de responsável está adequado?",risco:"Autuação MTE por descumprimento da NR-05, nulidade de processos disciplinares, impedimento de eleições, responsabilidade por acidentes sem participação da CIPA",acao:"1. Realizar dimensionamento da CIPA conforme NR-05, Quadro I, considerando grau de risco 3 e 215 empregados; 2. Convocar eleições regulares, com posse, registro em ata e treinamento obrigatório da CIPA; 3. Garantir reuniões mensais documentadas e atuação efetiva da comissão. Prazo: conforme calendário eleitoral. Responsável: Empregador e CIPA. Evidência: atas de eleição, posse e reuniões."},
+ {n:25,b:17,req:"O mapa de riscos foi elaborado para auxiliar na cultura de SST?",risco:"Autuação MTE por descumprimento da NR-05 (item 5.17), falta de informação visual aos trabalhadores, fragilidade da cultura de prevenção",acao:"1. Elaborar Mapa de Riscos por setor, conforme NR-05, item 5.17, com a participação da CIPA; 2. Representar graficamente os agentes de risco (físicos, químicos, biológicos, ergonômicos e de acidentes) com círculos de gravidade padronizados; 3. Afixar o mapa em locais visíveis e manter atualização sempre que houver alteração de riscos. Prazo: 90 dias. Responsável: CIPA com apoio do SESMT. Evidência: mapas afixados e atas de aprovação."},
+ {n:26,b:18,req:"Existe evidência da correlação risco PGR x EPIs x insalubridades/acidentes x periodicidade x prazo x assinaturas x notas fiscais de compra?",risco:"Autuação MTE por descumprimento da NR-06, descaracterização da neutralização de insalubridade, condenação ao pagamento de adicional, responsabilidade por acidentes por ausência de EPI",acao:"1. Estruturar matriz correlacionando riscos do PGR, EPIs fornecidos, CAs válidos, periodicidade de troca e insalubridades, conforme NR-06; 2. Registrar entrega de EPIs em fichas com data, assinatura e CA, e manter notas fiscais de compra; 3. Realizar treinamento de uso, guarda e conservação dos EPIs; 4. Fiscalizar o uso efetivo e adotar medidas corretivas. Prazo: 60 dias. Responsável: SESMT. Evidência: fichas de EPI, notas fiscais de compra e registros de treinamento."},
+ {n:27,b:19,req:"Os exames estão sendo realizados conforme a vigência? Os complementares estão sendo realizados? Existe gestão de controle de vencimento?",risco:"Autuação MTE por descumprimento da NR-07, descaracterização de ASOs, autuação previdenciária, perda de nexo causal em acidentes e doenças ocupacionais",acao:"1. Implantar gestão de controle de vencimento dos exames ocupacionais (admissional, periódico, retorno, mudança de função e demissional) conforme NR-07; 2. Garantir realização dos exames complementares conforme agentes de risco (audiometria, espirometria, exames laboratoriais); 3. Manter ASOs atualizados, arquivados e acessíveis, com emissão de via ao trabalhador. Prazo: imediato, com rotina mensal. Responsável: Médico do Trabalho e RH. Evidência: planilha de controle de vencimentos e ASOs."},
+ {n:28,b:20,req:"Realiza campanhas de orientação à prevenção à saúde? Tem cronograma de ações anuais com evidências?",risco:"Autuação MTE por descumprimento da Lei 15.377/2026 (saúde preventiva), responsabilidade civil por omissão em saúde pública, passivo trabalhista",acao:"1. Estruturar cronograma anual de campanhas de promoção à saúde, conforme Lei 15.377/2026 (vacinação, HPV, cânceres de mama, colo do útero e próstata); 2. Divulgar campanhas do Ministério da Saúde em murais, e-mails e cartilhas, com registro de comprovação; 3. Orientar trabalhadores sobre o direito de ausência remunerada de até 3 dias por ano para exames preventivos; 4. Registrar evidências de cada campanha (fotos, listas de presença, materiais). Prazo: 90 dias. Responsável: RH e SESMT. Evidência: cronograma anual e dossiê de campanhas."},
+ {n:29,b:21,req:"Realiza, conforme o ciclo de vigência do PCMSO, o levantamento das informações para fechamento do relatório analítico?",risco:"Autuação MTE por descumprimento da NR-07 (item 7.4.8), perda de dados epidemiológicos, fragilidade na gestão de saúde ocupacional",acao:"1. Coletar sistematicamente dados de saúde ocupacional ao longo do ciclo de vigência do PCMSO (exames, afastamentos, indicadores); 2. Elaborar relatório analítico conforme NR-07, item 7.4.8, ao final de cada ciclo, com análise crítica dos dados; 3. Apresentar o relatório à CIPA e utilizá-lo para melhoria contínua do PCMSO. Prazo: ao final do ciclo vigente. Responsável: Médico do Trabalho. Evidência: relatório analítico elaborado e apresentado."},
+ {n:30,b:22,req:"Existe caixa de primeiros socorros? Existe pessoa treinada para executar os primeiros socorros? Existe plano de atendimento a acidentes conforme NR-01 item 1.4.1?",risco:"Autuação MTE por descumprimento da NR-07 (item 7.5) e NR-01, agravamento de lesões, responsabilidade civil e criminal por omissão de socorro",acao:"1. Disponibilizar caixa de primeiros socorros conforme Anexo I da NR-07, com controle de validade dos insumos; 2. Capacitar equipe de primeiros socorros com curso básico e reciclagem periódica; 3. Elaborar plano de atendimento a acidentes conforme NR-01, item 1.4.1, com fluxo de acionamento e transporte. Prazo: 60 dias. Responsável: SESMT e CIPA. Evidência: inventário da caixa, certificados e plano implantado."},
+ {n:31,b:23,req:"Realiza investigação do acidente com medidas propostas de solução, evidências das ações tomadas e CAT? Apresentar a última CAT.",risco:"Autuação MTE por não emissão da CAT (Lei 8.213/91, art. 22), multa previdenciária, perda de direitos do trabalhador, responsabilidade civil",acao:"1. Implantar procedimento de investigação de acidentes com análise de causas (método de árvore de causas ou similar); 2. Elaborar plano de ações corretivas e preventivas com prazos e responsáveis; 3. Emitir CAT nos prazos legais (até o 1º dia útil seguinte ou imediatamente em caso de óbito), conforme Lei 8.213/91, art. 22; 4. Registrar evidências das ações (fotos, relatórios, atas). Prazo: imediato. Responsável: SESMT. Evidência: relatórios de investigação e CATs emitidas."},
+ {n:32,b:24,req:"Realiza Programa de Conservação Auditiva (PCA)?",risco:"Autuação MTE por descumprimento da NR-09 e NR-15 (Anexo 1), perda auditiva induzida por ruído (PAIR), passivo trabalhista, aposentadoria especial",acao:"1. Implantar Programa de Proteção Auditiva (PPA) com avaliação quantitativa de ruído (dosimetria) nos setores de Produção e Montagem; 2. Realizar audiometrias de referência e sequenciais nos trabalhadores expostos; 3. Fornecer protetores auditivos com CA válido, treinar uso e avaliar atenuação; 4. Monitorar indicadores de perda auditiva induzida por ruído (PAIR). Prazo: 120 dias. Responsável: Fonoaudiólogo e SESMT. Evidência: laudos de dosimetria, audiometrias e registros de entrega."},
+ {n:33,b:25,req:"Realiza Programa de Proteção Respiratória (PPR)?",risco:"Autuação MTE por descumprimento da NR-09 e NR-15 (Anexo 11), doenças respiratórias ocupacionais, passivo trabalhista, insalubridade grau máximo",acao:"1. Implantar Programa de Proteção Respiratória (PPR) com avaliação qualitativa/quantitativa dos agentes químicos; 2. Selecionar respiradores adequados conforme fator de proteção requerido e realizar teste de vedação; 3. Treinar uso, guarda e conservação; 4. Monitorar a eficácia com avaliações periódicas. Prazo: 120 dias. Responsável: Profissional habilitado e SESMT. Evidência: plano do PPR, testes de vedação e registros de treinamento."},
+ {n:34,b:26,req:"Existe alguma estrutura fora dos padrões que possa causar riscos de acidentes ou qualquer perigo conforme inspeção visual?",risco:"Acidentes por colapso estrutural, autuação MTE por descumprimento da NR-08 (edificações), embargo de atividades, responsabilidade criminal",acao:"1. Realizar inspeção técnica das edificações (piso, paredes, telhados) conforme NR-08, com check-list padronizado; 2. Elaborar laudo de inspeção com identificação de não conformidades e plano de correção; 3. Executar correções estruturais com priorização de riscos e nova inspeção de validação. Prazo: 90 dias para inspeção. Responsável: Engenheiro Civil e SESMT. Evidência: laudo de inspeção e registro fotográfico."},
+ {n:35,b:27,req:"Quem realiza pequenos reparos? Está habilitado dentro de sua função? Tem treinamento? Caso seja terceirizado, quando foi prestado o último serviço? Tem cópia do último contrato formal de prestação de serviço?",risco:"Autuação MTE por descumprimento da NR-10, acidentes por choque elétrico, interdição de atividades, responsabilidade criminal",acao:"1. Garantir que reparos elétricos sejam executados exclusivamente por profissional habilitado e qualificado, conforme NR-10; 2. Manter registros dos treinamentos (NR-10 básico e reciclagem) e certificações; 3. Formalizar contratos com terceirizadas, com cópia arquivada e verificação de habilitações; 4. Registrar intervenções elétricas em prontuário. Prazo: 60 dias. Responsável: Eletricista habilitado e SESMT. Evidência: certificados, contratos e prontuário de intervenções."},
+ {n:36,b:27,req:"Existe identificação das tomadas 110/220? Existe identificação nos painéis e quadros de energia?",risco:"Autuação MTE por descumprimento da NR-10 (item 10.2.4), acidentes por erro de identificação, responsabilidade civil",acao:"1. Implantar identificação padronizada das tomadas 110V/220V e dos painéis e quadros de energia, conforme NR-10, item 10.2.4; 2. Sinalizar riscos e proibições nos quadros elétricos; 3. Realizar inspeção visual periódica da sinalização. Prazo: 30 dias. Responsável: SESMT e manutenção. Evidência: registro fotográfico da sinalização implantada."},
+ {n:37,b:28,req:"Existem equipamentos de movimentação de cargas? Existe pessoa treinada?",risco:"Autuação MTE por descumprimento da NR-11, acidentes com equipamentos de movimentação, interdição, responsabilidade criminal",acao:"1. Garantir que equipamentos de movimentação (empilhadeiras, pontes rolantes, talhas) possuam operadores treinados e habilitados, conforme NR-11; 2. Manter registro documental de treinamentos e habilitações; 3. Realizar inspeções periódicas dos equipamentos com check-list e manutenção preventiva. Prazo: 60 dias. Responsável: SESMT e almoxarifado. Evidência: certificados de operadores e check-lists."},
+ {n:38,b:29,req:"Existe levantamento (inventário) de máquinas e equipamentos? Existe apreciação de riscos? Existe laudo da máquina ou equipamento? Tem treinamento para os operadores conforme NR-12?",risco:"Autuação MTE por descumprimento da NR-12, acidentes graves com máquinas, embargo e interdição, responsabilidade criminal",acao:"1. Elaborar inventário completo de máquinas e equipamentos com identificação individual; 2. Realizar apreciação de riscos conforme NR-12, item 12.5, para cada máquina; 3. Obter laudos técnicos e implantar medidas de proteção coletiva e administrativa; 4. Capacitar operadores conforme NR-12, item 12.135, com registro. Prazo: 180 dias. Responsável: Engenheiro de produção/mecânico e SESMT. Evidência: inventário, laudos de apreciação e certificados."},
+ {n:39,b:29,req:"Existe máquina ou equipamento sem proteção ou com dispositivos de emergência danificados ou com defeito?",risco:"Autuação MTE por descumprimento da NR-12 (item 12.30), acidentes graves com mutilação, embargo, responsabilidade criminal",acao:"1. Realizar inspeção periódica das proteções e dispositivos de emergência (botões de parada, sensores, proteções fixas e móveis) conforme NR-12; 2. Corrigir imediatamente máquinas sem proteção ou com dispositivos defeituosos, com interdição temporária se necessário; 3. Registrar inspeções e manutenções em prontuário. Prazo: imediato para correções críticas. Responsável: Manutenção e SESMT. Evidência: check-lists de inspeção e ordens de serviço de manutenção."},
+ {n:40,b:29,req:"Existe controle de manutenção preventiva e corretiva dos equipamentos?",risco:"Autuação MTE por descumprimento da NR-12 (item 12.121), acidentes por falha de manutenção, responsabilidade civil e criminal",acao:"1. Implantar plano de manutenção preventiva e corretiva de máquinas e equipamentos, conforme NR-12, item 12.121; 2. Estabelecer cronograma, responsáveis e registro documental das intervenções; 3. Garantir que manutenções sejam executadas com máquina desenergizada e com procedimento de bloqueio e etiquetagem (LOTO). Prazo: 90 dias. Responsável: Manutenção. Evidência: plano de manutenção e registros de intervenções."},
+ {n:41,b:29,req:"Existe sinalização visual efetiva nas máquinas e equipamentos quanto à prevenção de acidentes e cuidados em geral?",risco:"Autuação MTE por descumprimento da NR-12 (item 12.105), acidentes por falta de advertência, responsabilidade civil",acao:"1. Implantar sinalização visual de segurança nas máquinas, conforme NR-12, item 12.105, e NR-26; 2. Utilizar pictogramas padronizados de advertência e proibição; 3. Manter sinalização legível e em bom estado, com inspeção periódica. Prazo: 60 dias. Responsável: SESMT. Evidência: registro fotográfico da sinalização."},
+ {n:42,b:30,req:"Existem compressores ou vasos de pressão como caldeiras e outros? Existe prontuário do compressor? Está atualizado por um responsável técnico? Caso tenha caldeira, existe laudo? Existe profissional treinado para a atividade?",risco:"Autuação MTE por descumprimento da NR-13, explosão de vasos de pressão, acidentes graves e fatais, responsabilidade criminal",acao:"1. Manter prontuário dos compressores e vasos de pressão atualizado por responsável técnico, conforme NR-13; 2. Realizar inspeção de segurança periódica e teste hidrostático conforme periodicidade normativa; 3. Obter laudo de caldeiras quando aplicável; 4. Garantir operadores treinados e habilitados. Prazo: 90 dias. Responsável: Engenheiro habilitado (NR-13). Evidência: prontuários e laudos atualizados."},
+ {n:43,b:31,req:"Existe LTCAT e laudo de insalubridade? Existem evidências de neutralização: medidas preventivas (mitigação do risco na fonte), medidas administrativas (treinamentos de admissão e periódicos, OS, fichas de EPIs com periodicidade e EPIs adequados ao risco, sinalização, inspeção visual e procedimentos formais, advertência e critérios de punição)? Existe neutralização do agente nos documentos? E no local, está neutralizado visualmente?",risco:"Autuação MTE por descumprimento da NR-15, condenação ao pagamento de adicional de insalubridade retroativo, autuação previdenciária, passivo trabalhista",acao:"1. Manter LTCAT e laudo de insalubridade atualizados com medições quantitativas; 2. Documentar evidências de neutralização: medidas coletivas (na fonte), administrativas (treinamentos, OS, sinalização) e EPIs; 3. Realizar verificação visual periódica da neutralização no local; 4. Atualizar o laudo sempre que houver alteração de processos. Prazo: 90 dias. Responsável: Engenheiro/Técnico de Segurança do Trabalho. Evidência: laudos, fichas de EPI e registros fotográficos."},
+ {n:44,b:31,req:"Paga adicional para alguma função? Caso positivo, para qual risco? Qual percentual/valor pago? Recolhe GFIP como aposentadoria especial caso se enquadre?",risco:"Condenação ao pagamento de adicional de insalubridade retroativo, autuação previdenciária (GFIP), passivo trabalhista, ação civil pública MPT",acao:"1. Verificar conformidade do pagamento do adicional de insalubridade com base no laudo técnico (percentuais de 10%, 20% ou 40%, conforme NR-15); 2. Identificar funções, riscos e valores pagos; 3. Avaliar recolhimento do GFIP e enquadramento de aposentadoria especial quando aplicável, com apoio contábil e previdenciário. Prazo: 90 dias. Responsável: RH e contabilidade. Evidência: folhas de pagamento e GFIPs."},
+ {n:45,b:32,req:"Paga adicional para alguma função? Caso positivo, para qual risco? Qual percentual/valor pago? Recolhe GFIP como aposentadoria especial caso se enquadre? Realiza inspeção visual para verificação de pessoas executando atividade periculosa? Existe treinamento para as pessoas que realizam a atividade?",risco:"Condenação ao pagamento de adicional de periculosidade retroativo (CLT, art. 193), autuação previdenciária, passivo trabalhista, acidentes em atividades perigosas",acao:"1. Verificar conformidade do adicional de periculosidade (30%) com base em laudo técnico, conforme CLT, art. 193, e NR-16; 2. Realizar inspeções visuais periódicas das atividades perigosas; 3. Garantir treinamento específico dos trabalhadores; 4. Avaliar recolhimentos previdenciários. Prazo: 90 dias. Responsável: SESMT e RH. Evidência: laudo, inspeções e folhas de pagamento."},
+ {n:46,b:33,req:"Existe atividade de levantamento de cargas? Existe registro de treinamento?",risco:"Autuação MTE por descumprimento da NR-17, afastamentos por LER/DORT, passivo trabalhista, ação civil pública MPT",acao:"1. Identificar atividades de levantamento manual de cargas conforme NR-17, item 17.5; 2. Capacitar trabalhadores em técnicas de levantamento com registro; 3. Avaliar necessidade de auxílios mecânicos e implantá-los quando necessário. Prazo: 60 dias. Responsável: SESMT. Evidência: registros de treinamento e avaliação."},
+ {n:47,b:33,req:"Existe análise ergonômica de trabalho?",risco:"Autuação MTE por descumprimento da NR-17 (item 17.4), afastamentos por LER/DORT, passivo trabalhista, ação do MPT",acao:"1. Realizar Análise Ergonômica do Trabalho (AET) nos postos de montagem, produção e administrativo, conforme NR-17, item 17.4; 2. Implantar recomendações da AET (adequações de posto, pausas, rodízio); 3. Registrar evidências e reavaliar periodicamente. Prazo: 180 dias. Responsável: Profissional habilitado em ergonomia. Evidência: AET e plano de adequações."},
+ {n:48,b:33,req:"Realiza avaliação básica de adequações à NR-17 dos postos administrativos significativas conforme inspeção visual ou queixas?",risco:"Autuação MTE por descumprimento da NR-17, afastamentos por LER/DORT, passivo trabalhista",acao:"1. Realizar avaliação básica de adequação dos postos administrativos à NR-17 (mobiliário, equipamentos, iluminação, conforto); 2. Considerar inspeção visual e queixas dos trabalhadores; 3. Implantar correções prioritárias e reavaliar. Prazo: 90 dias. Responsável: SESMT. Evidência: check-list de avaliação e registro de correções."},
+ {n:49,b:34,req:"Existe trabalho a céu aberto? Caso positivo, existe protetor solar disponível? Chapéu ou boné árabe? Camisa de manga comprida? Água disponível para hidratação? Capa de chuva?",risco:"Autuação MTE por descumprimento da NR-21, insolação e desidratação, doenças ocupacionais, responsabilidade civil",acao:"1. Fornecer EPIs e condições para trabalho a céu aberto: protetor solar, chapéu/abrigo, camisa de manga comprida, água potável e capa de chuva, conforme NR-21; 2. Garantir hidratação adequada e pausas em condições de calor; 3. Registrar entrega dos EPIs com assinatura. Prazo: 30 dias. Responsável: SESMT. Evidência: fichas de entrega de EPIs."},
+ {n:50,b:35,req:"Existem extintores conforme necessidade? Os extintores estão desobstruídos? Existe sinalização de fácil visualização e em bom estado de conservação? Os extintores e hidrantes estão limpos? Existe cronograma de treinamentos anual? Existem inspeções periódicas dos extintores, hidrantes e ferramentas nas caixas de hidrantes?",risco:"Autuação MTE por descumprimento da NR-23, agravamento de incêndios, acidentes graves e fatais, responsabilidade criminal",acao:"1. Garantir extintores e hidrantes conforme dimensionamento da NR-23 e instruções técnicas do Corpo de Bombeiros; 2. Realizar inspeções periódicas mensais (desobstrução, sinalização, validade, lacre) com check-list; 3. Implantar cronograma anual de treinamentos de combate a incêndio e evacuação; 4. Manter registro das inspeções e treinamentos. Prazo: 60 dias. Responsável: Brigada e SESMT. Evidência: check-lists e certificados de treinamento."},
+ {n:51,b:36,req:"Existem instalações sanitárias divididas por sexo? Avalia itens básicos da NR-24? Existem refeitórios, áreas de vivência e afins?",risco:"Autuação MTE por descumprimento da NR-24, doenças de veiculação hídrica, responsabilidade civil, interdição",acao:"1. Garantir instalações sanitárias separadas por sexo e em quantidade adequada, conforme NR-24; 2. Manter refeitórios e áreas de vivência adequados (higiene, ventilação, água potável); 3. Realizar vistorias periódicas com check-list e plano de correção. Prazo: 90 dias. Responsável: SESMT e instalações. Evidência: check-lists de vistoria e registros de correção."},
+ {n:52,b:37,req:"A empresa tem um plano de sinalização administrativo (setores e avisos), operacional (máquinas), SST (placas de segurança), Meio Ambiente (resíduos) e programas de qualidade (5S)?",risco:"Autuação MTE por descumprimento da NR-26, acidentes por falta de sinalização, responsabilidade civil",acao:"1. Implantar plano integrado de sinalização conforme NR-26, abrangendo áreas administrativas, operacionais (máquinas), SST (placas de segurança), meio ambiente (resíduos) e programas de qualidade (5S); 2. Utilizar cores e pictogramas padronizados; 3. Manter sinalização legível com inspeção periódica. Prazo: 120 dias. Responsável: SESMT e comunicação. Evidência: plano de sinalização e registro fotográfico."},
+ {n:53,b:38,req:"Disponibiliza PPPs para colaboradores admitidos antes de 2023?",risco:"Autuação previdenciária por descumprimento da legislação (IN 128/2022), perda de direitos previdenciários dos trabalhadores, passivo trabalhista",acao:"1. Elaborar e disponibilizar o Perfil Profissiográfico Previdenciário (PPP) para colaboradores admitidos antes de 2023, conforme IN 128/2022; 2. Manter o PPP atualizado com dados do LTCAT e eSocial (evento S-2240); 3. Entregar cópia ao trabalhador na rescisão ou quando solicitado. Prazo: 90 dias. Responsável: RH e SESMT. Evidência: PPPs emitidos e comprovantes de entrega."}
+];
+
+const M2_EXAMPLE = {1:"NC",2:"NC",3:"NC",4:"NC",5:"NC",6:"NC",7:"NC",8:"NC",9:"NC",10:"NC",11:"NC",12:"NC",13:"NC",14:"NC",15:"NC",16:"NC",17:"NC",18:"NC",19:"NC",20:"NC",21:"NC",22:"NC",23:"NC",24:"NC",25:"NC",26:"NC",27:"NC",28:"NC",29:"NC",30:"NC",31:"NC",32:"NC",33:"NC",34:"NC",35:"NC",36:"NC",37:"NC",38:"NC",39:"NC",40:"NC",41:"NC",42:"NC",43:"NC",44:"NC",45:"NC",46:"NC",47:"NC",48:"NC",49:"NC",50:"NC",51:"NC",52:"NC",53:"NC"};
+
+const MODELS = {
+  moveleira:{ id:'moveleira', name:'Auditoria SST — Moveleira', subtitle:'Indústria de Móveis sob Encomenda', hasPriority:true, blocks:M1_BLOCKS, items:M1_ITEMS, example:M1_EXAMPLE },
+  geral:{ id:'geral', name:'Auditoria SST — Geral', subtitle:'Auditoria de Segurança e Saúde do Trabalho', hasPriority:false, blocks:M2_BLOCKS, items:M2_ITEMS, example:M2_EXAMPLE }
+};
+let BLOCKS = M1_BLOCKS, ITEMS = M1_ITEMS;
+let answers = {}, plan = {}, attach = {};
 
 const EXAMPLE_COMPANY = {
   razao:"Marcenaria Exemplo Móveis Planejados Ltda. (EXEMPLO)",
@@ -490,10 +612,19 @@ const Store = (()=>{
    ============================================================ */
 let state = Store.get('brantech_state');
 if(!state){
-  state = { company:{...EXAMPLE_COMPANY}, answers:{...EXAMPLE_ANSWERS}, plan:{} };
-  Store.set('brantech_state', state);
+  state = { model:'moveleira', company:{...EXAMPLE_COMPANY}, models:{ moveleira:modelData('moveleira',true), geral:modelData('geral',false) } };
+} else if(!state.models){
+  var old=state;
+  state = { model:'moveleira', company: old.company||{...EXAMPLE_COMPANY}, models:{ moveleira:{ answers: old.answers||{...MODELS.moveleira.example}, plan: old.plan||{}, attach: old.attach||{} }, geral:modelData('geral',false) } };
 }
-if(!state.attach) state.attach={};
+if(!state.model) state.model='moveleira';
+if(!state.models) state.models={};
+if(!state.models.moveleira) state.models.moveleira=modelData('moveleira',true);
+if(!state.models.geral) state.models.geral=modelData('geral',false);
+Store.set('brantech_state', state);
+function cur(){ return state.models[state.model]; }
+function applyModel(){ const m=MODELS[state.model]; BLOCKS=m.blocks; ITEMS=m.items; const d=cur(); answers=d.answers; plan=d.plan; attach=d.attach; }
+applyModel();
 let filterBlock = 'all';
 
 function save(){ Store.set('brantech_state', state); }
@@ -534,18 +665,18 @@ async function addFiles(n,files){
     try{ await idbPut({id,blob,name:f.name,type}); }
     catch(e){ toast('Não foi possível salvar o anexo neste aparelho'); return; }
     try{ thumbURL[id]=URL.createObjectURL(blob); }catch(e){}
-    (state.attach[n]=state.attach[n]||[]).push({id,name:f.name,type,size:(blob&&blob.size)||0,ts:Date.now()});
+    (attach[n]=attach[n]||[]).push({id,name:f.name,type,size:(blob&&blob.size)||0,ts:Date.now()});
   }
   save(); renderAudit(); toast('Documento anexado');
 }
 async function removeAttach(n,id){
   try{ await idbDel(id); }catch(e){}
   if(thumbURL[id]){ try{URL.revokeObjectURL(thumbURL[id]);}catch(e){} delete thumbURL[id]; }
-  state.attach[n]=(state.attach[n]||[]).filter(a=>a.id!==id);
+  attach[n]=(attach[n]||[]).filter(a=>a.id!==id);
   save(); renderAudit();
 }
 function attachChips(n){
-  const list=state.attach[n]||[];
+  const list=attach[n]||[];
   if(!list.length) return '';
   return '<div class="attach-list">'+list.map(a=>{
     const isImg=(a.type||'').indexOf('image')===0;
@@ -558,7 +689,7 @@ function attachChips(n){
 }
 async function hydrateThumbs(){
   const ids=[];
-  Object.values(state.attach||{}).forEach(arr=>(arr||[]).forEach(a=>ids.push(a.id)));
+  Object.values(attach||{}).forEach(arr=>(arr||[]).forEach(a=>ids.push(a.id)));
   let any=false;
   for(const id of ids){ if(thumbURL[id])continue; try{ const rec=await idbGet(id); if(rec&&rec.blob){ thumbURL[id]=URL.createObjectURL(rec.blob); any=true; } }catch(e){} }
   if(any) renderAudit();
@@ -573,10 +704,10 @@ function stats(){
   const perBlock = BLOCKS.map(()=>({C:0,NC:0,NA:0,pend:0,total:0}));
   const pri={Alta:0,Média:0,Baixa:0};
   ITEMS.forEach(it=>{
-    const a=state.answers[it.n];
+    const a=answers[it.n];
     perBlock[it.b].total++;
     if(a==='C'){C++;perBlock[it.b].C++;}
-    else if(a==='NC'){NC++;perBlock[it.b].NC++;pri[it.pri]++;}
+    else if(a==='NC'){NC++;perBlock[it.b].NC++;if(it.pri&&pri[it.pri]!=null)pri[it.pri]++;}
     else if(a==='NA'){NA++;perBlock[it.b].NA++;}
     else {pend++;perBlock[it.b].pend++;}
   });
@@ -600,7 +731,7 @@ function fmtPct(v){ return v===null?'—':(Math.round(v*10)/10).toString().repla
 function renderFilters(){
   const s=stats();
   const el=document.getElementById('filters');
-  let h=`<button class="chip ${filterBlock==='all'?'on':''}" onclick="setFilter('all')">Todos<span class="n">${s.evaluated}/45</span></button>`;
+  let h=`<button class="chip ${filterBlock==='all'?'on':''}" onclick="setFilter('all')">Todos<span class="n">${s.evaluated}/${ITEMS.length}</span></button>`;
   BLOCKS.forEach((b,i)=>{
     const pb=s.perBlock[i]; const done=pb.C+pb.NC+pb.NA;
     const short=b.replace(/^\d+\.\s*/,'').replace(' (Máquinas — Marcenaria)','').replace(' e Previdência Social','').replace(', MPT e Sindicato','');
@@ -610,6 +741,12 @@ function renderFilters(){
 }
 function setFilter(b){ filterBlock=b; renderFilters(); renderAudit(); }
 
+function itemDetail(it){
+  if(it.risco){
+    return `<div class="detail"><details><summary><span class="caret">▶</span> Risco potencial</summary><div class="body">${it.risco}</div></details></div>`;
+  }
+  return `<div class="detail"><details><summary><span class="caret">▶</span> Documento esperado e órgãos</summary><div class="body"><span class="k">Documento:</span> ${it.doc}<div class="orgs"><span class="org" style="background:#E4EFEA;border-color:#C6E0D3;color:var(--brand-2)">${it.nr}</span>${(it.org||'').split(' / ').map(o=>`<span class="org">${o}</span>`).join('')}</div></div></details></div>`;
+}
 function renderAudit(){
   const list=document.getElementById('audit-list');
   const s=stats();
@@ -619,17 +756,13 @@ function renderAudit(){
     const pb=s.perBlock[bi];
     h+=`<div class="blockhdr"><span class="idx">${bi+1}</span><h2>${bname.replace(/^\d+\.\s*/,'')}</h2><span class="pct">${fmtPct(blockPct(pb))}</span></div>`;
     ITEMS.filter(it=>it.b===bi).forEach(it=>{
-      const a=state.answers[it.n];
+      const a=answers[it.n];
       h+=`<div class="item ${a?('answered-'+a):''}">
         <div class="item-top">
           <span class="num">${it.n}</span>
           <p class="req">${it.req}</p>
         </div>
-        <div class="detail"><details><summary><span class="caret">▶</span> Documento esperado e órgãos</summary>
-          <div class="body"><span class="k">Documento:</span> ${it.doc}
-            <div class="orgs"><span class="org" style="background:#E4EFEA;border-color:#C6E0D3;color:var(--brand-2)">${it.nr}</span>${it.org.split(' / ').map(o=>`<span class="org">${o}</span>`).join('')}</div>
-          </div>
-        </details></div>
+        ${itemDetail(it)}
         <div class="seg">
           <button class="${a==='C'?'sel-C':''}" onclick="answer(${it.n},'C')"><span class="ic">✓</span> Conforme</button>
           <button class="${a==='NC'?'sel-NC':''}" onclick="answer(${it.n},'NC')"><span class="ic">✕</span> Não conf.</button>
@@ -650,7 +783,7 @@ function renderAudit(){
   renderProgress();
 }
 function answer(n,val){
-  state.answers[n] = (state.answers[n]===val)? null : val;
+  answers[n] = (answers[n]===val)? null : val;
   save();
   // atualiza só o item + agregados, sem re-render pesado
   renderAudit(); renderFilters(); renderTopIndex(); renderNavBadge();
@@ -658,17 +791,17 @@ function answer(n,val){
 
 function renderProgress(){
   const s=stats();
-  document.getElementById('prog-count').textContent = `${s.evaluated} de 45 itens`;
+  document.getElementById('prog-count').textContent = `${s.evaluated} de ${ITEMS.length} itens`;
   document.getElementById('prog-idx').textContent = `Índice ${fmtPct(s.idx)}`;
   const bar=document.getElementById('prog-bar');
-  const w=n=>(n/45*100).toFixed(2)+'%';
+  const w=n=>(n/ITEMS.length*100).toFixed(2)+'%';
   bar.innerHTML=`<i class="s-ok" style="width:${w(s.C)}"></i><i class="s-no" style="width:${w(s.NC)}"></i><i class="s-na" style="width:${w(s.NA)}"></i>`;
 }
 function renderTopIndex(){
   const s=stats();
   document.getElementById('hdr-idx').textContent=fmtPct(s.idx);
-  document.getElementById('sub-empresa').textContent=state.company.razao||'—';
-  document.getElementById('sub-prog').textContent=`${s.evaluated}/45`;
+  document.getElementById('sub-empresa').textContent=(state.company.razao||'—')+' · '+MODELS[state.model].name;
+  document.getElementById('sub-prog').textContent=`${s.evaluated}/${ITEMS.length}`;
 }
 
 /* ============================================================
@@ -677,6 +810,10 @@ function renderTopIndex(){
 function renderPainel(){
   const s=stats();
   const b=band(s.idx);
+  const hasPri=MODELS[state.model].hasPriority;
+  const _p3=document.getElementById('pri3'), _p3s=document.getElementById('pri3-sec');
+  if(_p3) _p3.style.display=hasPri?'':'none';
+  if(_p3s) _p3s.style.display=hasPri?'':'none';
   // Gauge
   const R=54, C0=2*Math.PI*R, pct=s.idx===null?0:s.idx/100;
   document.getElementById('gauge').innerHTML=`
@@ -718,9 +855,10 @@ function statBox(cls,v,l){ return `<div class="stat ${cls}"><div class="v">${v}<
    ============================================================ */
 function renderPlano(){
   const el=document.getElementById('plan-list');
-  const ncs=ITEMS.filter(it=>state.answers[it.n]==='NC');
-  const order={Alta:0,Média:1,Baixa:2};
-  ncs.sort((a,b)=> order[a.pri]-order[b.pri] || a.n-b.n);
+  const hasPri=MODELS[state.model].hasPriority;
+  const ncs=ITEMS.filter(it=>answers[it.n]==='NC');
+  if(hasPri){ const order={Alta:0,'Média':1,Baixa:2}; ncs.sort((a,b)=>order[a.pri]-order[b.pri]||a.n-b.n); }
+  else ncs.sort((a,b)=>a.n-b.n);
   if(ncs.length===0){
     el.innerHTML=`<div class="plan-empty"><div class="ico"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="var(--ok)" stroke-width="2"><path d="M20 6L9 17l-5-5"/></svg></div>
       <p style="font-weight:600;color:var(--text);margin:0 0 4px">Nenhuma não conformidade</p>
@@ -730,100 +868,87 @@ function renderPlano(){
   const pcls={'Alta':'alta','Média':'media','Baixa':'baixa'};
   let h='';
   ncs.forEach(it=>{
-    const pl=state.plan[it.n]||{};
-    h+=`<div class="pl-item ${pcls[it.pri]}">
-      <div class="pl-top">
-        <span class="pl-num">Item ${it.n}</span>
-        <span class="pl-badge ${pcls[it.pri]}">${it.pri}</span>
-        <span class="pl-nr">${it.nr}</span>
-      </div>
+    const pl=plan[it.n]||{};
+    const cls = hasPri?pcls[it.pri]:'baixa';
+    const top = hasPri
+      ? `<span class="pl-num">Item ${it.n}</span><span class="pl-badge ${pcls[it.pri]}">${it.pri}</span>${it.nr?`<span class="pl-nr">${it.nr}</span>`:''}`
+      : `<span class="pl-num">Item ${it.n}</span><span class="pl-nr" style="margin-left:auto">${(MODELS[state.model].blocks[it.b]||'').replace(/^\d+\.\s*/,'')}</span>`;
+    const riscoLine = it.risco?`<p class="pl-acao"><b>Risco potencial:</b> ${it.risco}</p>`:'';
+    h+=`<div class="pl-item ${cls}">
+      <div class="pl-top">${top}</div>
       <p class="pl-req">${it.req}</p>
-      <p class="pl-acao"><b>Ação corretiva:</b> ${it.acao}</p>
+      ${riscoLine}
+      <p class="pl-acao"><b>${it.risco?'Recomendação:':'Ação corretiva:'}</b> ${it.acao}</p>
       <div class="pl-fields">
         <div class="fld"><label>Responsável</label><input type="text" value="${(pl.resp||'A definir').replace(/"/g,'&quot;')}" onchange="setPlan(${it.n},'resp',this.value)"></div>
         <div class="fld"><label>Prazo</label><input type="date" value="${pl.prazo||''}" onchange="setPlan(${it.n},'prazo',this.value)"></div>
-        <div class="fld full"><label>Status</label><select onchange="setPlan(${it.n},'status',this.value)">
-          ${['Pendente','Em andamento','Concluído'].map(o=>`<option ${((pl.status||'Pendente')===o)?'selected':''}>${o}</option>`).join('')}
-        </select></div>
+        <div class="fld full"><label>Status</label><select onchange="setPlan(${it.n},'status',this.value)">${['Pendente','Em andamento','Concluído'].map(o=>`<option ${((pl.status||'Pendente')===o)?'selected':''}>${o}</option>`).join('')}</select></div>
       </div>
     </div>`;
   });
   el.innerHTML=h;
 }
-function setPlan(n,k,v){ state.plan[n]=state.plan[n]||{}; state.plan[n][k]=v; save(); }
+function setPlan(n,k,v){ plan[n]=plan[n]||{}; plan[n][k]=v; save(); }
 
 /* ============================================================
    RENDER — Relatório executivo
    ============================================================ */
 async function renderReport(){
+  const M=MODELS[state.model]; const hasPri=M.hasPriority;
   const s=stats(); const b=band(s.idx); const c=state.company;
   const dataFmt = c.data ? c.data.split('-').reverse().join('/') : '[Data]';
-  const ncs=ITEMS.filter(it=>state.answers[it.n]==='NC');
-  const order={Alta:0,Média:1,Baixa:2};
-  ncs.sort((a,b)=> order[a.pri]-order[b.pri] || a.n-b.n);
+  const ncs=ITEMS.filter(it=>answers[it.n]==='NC');
+  if(hasPri){ const order={Alta:0,'Média':1,Baixa:2}; ncs.sort((a,b2)=> order[a.pri]-order[b2.pri] || a.n-b2.n); }
+  else ncs.sort((a,b2)=>a.n-b2.n);
   const pcls={'Alta':'alta','Média':'media','Baixa':'baixa'};
 
-  // Pré-carrega imagens de evidência das NCs para embutir no relatório/PDF
   const evMap={};
-  for(const it of ncs){
-    for(const a of (state.attach[it.n]||[])){
-      if((a.type||'').indexOf('image')===0){
-        try{ const rec=await idbGet(a.id); if(rec&&rec.blob) evMap[a.id]=await blobToDataURL(rec.blob); }catch(e){}
-      }
-    }
-  }
-  const evBlock=(n)=>{
-    const list=state.attach[n]||[];
-    if(!list.length) return '';
-    const inner=list.map(a=>{
-      const nm=(a.name||'documento').replace(/</g,'&lt;');
-      if((a.type||'').indexOf('image')===0 && evMap[a.id]) return `<img src="${evMap[a.id]}" alt="${nm.replace(/"/g,'&quot;')}">`;
-      return `<span class="ev-file">${nm}</span>`;
-    }).join('');
-    return `<div class="nc-ev"><div class="ev-h">Evidências anexadas (${list.length})</div><div class="ev-imgs">${inner}</div></div>`;
-  };
+  for(const it of ncs){ for(const a of (attach[it.n]||[])){ if((a.type||'').indexOf('image')===0){ try{ const rec=await idbGet(a.id); if(rec&&rec.blob) evMap[a.id]=await blobToDataURL(rec.blob); }catch(e){} } } }
+  const evBlock=(n)=>{ const list=attach[n]||[]; if(!list.length) return ''; const inner=list.map(a=>{ const nm=(a.name||'documento').replace(/</g,'&lt;'); if((a.type||'').indexOf('image')===0 && evMap[a.id]) return `<img src="${evMap[a.id]}" alt="${nm.replace(/"/g,'&quot;')}">`; return `<span class="ev-file">${nm}</span>`; }).join(''); return `<div class="nc-ev"><div class="ev-h">Evidências anexadas (${list.length})</div><div class="ev-imgs">${inner}</div></div>`; };
 
-  // Tabela por bloco
   let blockRows='';
-  BLOCKS.forEach((bn,i)=>{
-    const pb=s.perBlock[i];
-    blockRows+=`<tr><td>${bn}</td><td class="c">${pb.total}</td><td class="c">${pb.C}</td><td class="c">${pb.NC}</td><td class="c">${pb.NA}</td><td class="c">${fmtPct(blockPct(pb))}</td></tr>`;
-  });
+  BLOCKS.forEach((bn,i)=>{ const pb=s.perBlock[i]; blockRows+=`<tr><td>${bn}</td><td class="c">${pb.total}</td><td class="c">${pb.C}</td><td class="c">${pb.NC}</td><td class="c">${pb.NA}</td><td class="c">${fmtPct(blockPct(pb))}</td></tr>`; });
 
-  // NCs agrupadas por bloco
   let ncHtml='';
-  if(ncs.length===0){
-    ncHtml=`<p><em>Nenhuma não conformidade registrada até o momento. Marque os itens do checklist para que esta seção seja preenchida automaticamente.</em></p>`;
-  } else {
+  if(ncs.length===0){ ncHtml=`<p><em>Nenhuma não conformidade registrada até o momento — ou a auditoria de campo ainda não foi concluída. Ao marcar os itens do checklist, esta seção é preenchida automaticamente.</em></p>`; }
+  else {
     BLOCKS.forEach((bn,i)=>{
-      const inBlock=ncs.filter(it=>it.b===i);
-      if(inBlock.length===0) return;
+      const inBlock=ncs.filter(it=>it.b===i); if(!inBlock.length) return;
       ncHtml+=`<div class="nc-block-title">${bn}</div>`;
       inBlock.forEach(it=>{
-        ncHtml+=`<div class="nc">
-          <div class="nc-h"><span class="nc-id">Item ${it.n} — ${it.nr}</span><span class="pbadge ${pcls[it.pri]}">Prioridade ${it.pri}</span></div>
-          <dl>
-            <div class="row"><span class="lab">Requisito não atendido:</span> ${it.req}</div>
-            <div class="row"><span class="lab">Documento esperado:</span> ${it.doc}</div>
-            <div class="row"><span class="lab">Pode ser exigido por:</span> ${it.org}</div>
-            <div class="row"><span class="lab">Ação corretiva recomendada:</span> ${it.acao}</div>
-          </dl>
-          ${evBlock(it.n)}
-        </div>`;
+        const badge = hasPri?`<span class="pbadge ${pcls[it.pri]}">Prioridade ${it.pri}</span>`:'';
+        const idLine = it.nr?`Item ${it.n} — ${it.nr}`:`Item ${it.n}`;
+        let rows='';
+        rows+=`<div class="row"><span class="lab">${it.risco?'Constatação / requisito:':'Requisito não atendido:'}</span> ${it.req}</div>`;
+        if(it.doc) rows+=`<div class="row"><span class="lab">Documento esperado:</span> ${it.doc}</div>`;
+        if(it.org) rows+=`<div class="row"><span class="lab">Pode ser exigido por:</span> ${it.org}</div>`;
+        if(it.risco) rows+=`<div class="row"><span class="lab">Risco potencial:</span> ${it.risco}</div>`;
+        rows+=`<div class="row"><span class="lab">${it.risco?'Recomendação (plano de ação):':'Ação corretiva recomendada:'}</span> ${it.acao}</div>`;
+        ncHtml+=`<div class="nc"><div class="nc-h"><span class="nc-id">${idLine}</span>${badge}</div><dl>${rows}</dl>${evBlock(it.n)}</div>`;
       });
     });
   }
 
   const nivelSentence = s.idx===null
     ? `A auditoria de campo ainda está em andamento; o nível geral de conformidade será consolidado ao final do preenchimento do checklist.`
-    : `O nível geral de conformidade documental encontrado é <b>${b.lbl}</b>, com reflexos sobre o risco de autuação pelo Ministério do Trabalho e Emprego (MTE), atuação do Ministério Público do Trabalho (MPT), reivindicação sindical e questionamento previdenciário (INSS), conforme detalhado neste relatório.`;
+    : `O nível geral de conformidade documental encontrado é <b>${b.lbl}</b>, com reflexos sobre o risco de autuação pelo MTE, atuação do MPT, reivindicação sindical e questionamento previdenciário (INSS), conforme detalhado neste relatório.`;
+
+  const setorPhrase = state.model==='moveleira' ? 'empresa do setor moveleiro (fabricação de móveis sob encomenda)' : 'empresa auditada';
+
+  const metodologia = hasPri
+    ? `<p>A auditoria foi conduzida por meio de checklist documental estruturado em blocos temáticos, abrangendo os requisitos das NRs aplicáveis (NR-01, NR-04, NR-05, NR-06, NR-07, NR-12, NR-15, NR-16, NR-20, NR-23 e NR-26), os eventos de SST do eSocial (S-1060, S-2210, S-2220 e S-2240) e a documentação previdenciária correlata.</p><p>Para cada item foram avaliados a existência, a validade e a coerência do documento. Cada não conformidade é classificada quanto à prioridade de regularização (Alta, Média ou Baixa), considerando o risco de acidente grave, de autuação fiscal e de passivo trabalhista ou previdenciário.</p>`
+    : `<p>A auditoria foi conduzida por meio de checklist estruturado em blocos temáticos, abrangendo a gestão de SST e eSocial, os agentes de risco (físicos, químicos, ergonômicos, psicossociais e de acidentes) e as Normas Regulamentadoras aplicáveis à atividade.</p><p>Para cada item foi avaliada a conformidade (Conforme, Não Conforme ou Não Aplicável) e, para cada não conformidade, foram registrados o risco potencial associado e a recomendação de regularização, que compõem o plano de ação.</p>`;
+
+  const conclusion = hasPri
+    ? `<p>Do total de ${s.total} requisitos avaliados, <b>${s.NC}</b> foram classificados como Não Conformes, sendo <b>${s.pri.Alta}</b> de prioridade Alta, <b>${s.pri['Média']}</b> de prioridade Média e <b>${s.pri.Baixa}</b> de prioridade Baixa. As não conformidades de prioridade Alta representam o maior risco imediato e devem ser tratadas como prioridade máxima no plano de ação.</p>`
+    : `<p>Do total de ${s.total} itens avaliados, <b>${s.NC}</b> foram classificados como Não Conformes e <b>${s.C}</b> como Conformes${s.NA?`, além de ${s.NA} não aplicáveis`:''}. Cada não conformidade está associada, na seção anterior, a um risco potencial e a uma recomendação específica, que devem orientar a priorização do plano de ação.</p>`;
 
   document.getElementById('report').innerHTML=`
     <div class="rep-hdr">
       <img class="brand-logo rep-logo" src="${LOGO}" alt="Brantech — Engenharia de Segurança do Trabalho">
       <div class="ey">Relatório executivo de auditoria</div>
       <h1>Segurança e Saúde no Trabalho — Conformidade Documental</h1>
-      <div class="sub">Indústria de Móveis sob Encomenda</div>
+      <div class="sub">${M.subtitle}</div>
     </div>
     <div class="rep-meta">
       <div><span class="k">${c.razao||'[Razão social]'}</span></div>
@@ -831,10 +956,11 @@ async function renderReport(){
       <div>Nº de empregados: ${c.empregados||'—'} · Grau de risco (NR-4): ${c.grau||'—'}</div>
       <div>Data da auditoria: ${dataFmt}</div>
       <div>Responsável técnico: ${c.auditor||'[Auditor]'} — ${c.cargo||''}</div>
+      <div>Modelo de auditoria: ${M.name}</div>
     </div>
 
     <h2 class="s"><span class="n">1.</span> Sumário Executivo</h2>
-    <p>Este relatório apresenta o resultado da auditoria documental de Segurança e Saúde no Trabalho (SST) realizada em ${c.razao||'[empresa]'}, empresa do setor moveleiro (fabricação de móveis sob encomenda), com o objetivo de verificar o cumprimento das obrigações documentais estabelecidas pelas Normas Regulamentadoras (NRs), pelo eSocial e pela legislação previdenciária, e de identificar os pontos passíveis de questionamento pelo MTE, MPT, entidades sindicais e pela Previdência Social (INSS).</p>
+    <p>Este relatório apresenta o resultado da auditoria documental de Segurança e Saúde no Trabalho (SST) realizada em ${c.razao||'[empresa]'}, ${setorPhrase}, com o objetivo de verificar o cumprimento das obrigações estabelecidas pelas Normas Regulamentadoras, pelo eSocial e pela legislação previdenciária, e de identificar os pontos passíveis de questionamento pelo MTE, MPT, entidades sindicais e pela Previdência Social (INSS).</p>
     <p>${nivelSentence}</p>
     <table class="t">
       <tr><th>Indicador</th><th class="c" style="width:90px">Valor</th></tr>
@@ -846,8 +972,7 @@ async function renderReport(){
     </table>
 
     <h2 class="s"><span class="n">2.</span> Metodologia</h2>
-    <p>A auditoria foi conduzida por meio de checklist documental estruturado em blocos temáticos, abrangendo os requisitos obrigatórios das NRs aplicáveis à atividade moveleira (NR-01, NR-04, NR-05, NR-06, NR-07, NR-12, NR-15, NR-16, NR-20, NR-23 e NR-26), os eventos de SST do eSocial (S-1060, S-2210, S-2220 e S-2240) e a documentação previdenciária correlata (PPP, NTEP, FAP e SAT/RAT).</p>
-    <p>Para cada item foram avaliados: (i) a existência do documento; (ii) sua validade/atualização; e (iii) sua coerência com os demais registros. Cada não conformidade é classificada quanto à prioridade de regularização (Alta, Média ou Baixa), considerando o risco de acidente grave, de autuação fiscal imediata e de passivo trabalhista ou previdenciário.</p>
+    ${metodologia}
 
     <h2 class="s"><span class="n">3.</span> Resultado Geral por Bloco</h2>
     <table class="t">
@@ -859,10 +984,10 @@ async function renderReport(){
     ${ncHtml}
 
     <h2 class="s"><span class="n">5.</span> Conclusão e Recomendações</h2>
-    <p>Do total de ${s.total} requisitos documentais avaliados, <b>${s.NC}</b> foram classificados como Não Conformes, sendo <b>${s.pri.Alta}</b> de prioridade Alta, <b>${s.pri.Média}</b> de prioridade Média e <b>${s.pri.Baixa}</b> de prioridade Baixa. As não conformidades de prioridade Alta representam o maior risco imediato de autuação e devem ser tratadas como prioridade máxima no plano de ação.</p>
+    ${conclusion}
     <p>Recomenda-se ao contratante:</p>
     <ul class="rec">
-      <li>Aprovar formalmente o plano de ação com prazos e responsáveis para cada não conformidade de prioridade Alta, com execução em até 30 a 45 dias.</li>
+      <li>Aprovar formalmente o plano de ação com prazos e responsáveis, priorizando as não conformidades de maior risco, com execução em até 30 a 45 dias.</li>
       <li>Designar um responsável formal pela gestão documental de SST, com relatórios periódicos à diretoria.</li>
       <li>Regularizar prioritariamente os eventos do eSocial (S-1060, S-2210, S-2220, S-2240) e o LTCAT/PPP, base da fiscalização cruzada entre MTE, MPT e INSS.</li>
       <li>Revisar o cumprimento das cláusulas de SST da Convenção/Acordo Coletivo de Trabalho.</li>
@@ -871,6 +996,7 @@ async function renderReport(){
     <div class="foot">Este relatório tem caráter técnico e não substitui a análise jurídica específica do caso concreto; recomenda-se sua discussão com o departamento jurídico e com os profissionais habilitados de cada área (engenharia de segurança, medicina do trabalho, contabilidade e departamento pessoal).</div>
     <div class="rep-credit">Sistema de auditoria desenvolvido por Evolue — Treinamento e Desenvolvimento</div>`;
 }
+
 
 /* ============================================================
    RENDER — Identificação
@@ -919,23 +1045,42 @@ function go(id){
   if(id==='painel') renderPainel();
   if(id==='plano') renderPlano();
   if(id==='relatorio') renderReport();
-  if(id==='empresa') renderIdent();
+  if(id==='empresa'){ renderModelSelector(); renderIdent(); }
 }
 
 /* ============================================================
    AÇÕES
    ============================================================ */
 function toast(msg){ const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); clearTimeout(t._t); t._t=setTimeout(()=>t.classList.remove('show'),2200); }
+function modelData(modelId, useExample){ const m=MODELS[modelId]; return { answers: useExample?{...m.example}:{}, plan:{}, attach:{} }; }
+async function idbClearModel(modelId){ const d=state.models[modelId]; if(!d) return; const ids=[]; Object.values(d.attach||{}).forEach(arr=>(arr||[]).forEach(a=>ids.push(a.id))); for(const id of ids){ try{ await idbDel(id); }catch(e){} } }
+function renderModelSelector(){
+  const el=document.getElementById('model-sel'); if(!el) return;
+  el.innerHTML=Object.values(MODELS).map(m=>`
+    <button class="model-opt ${m.id===state.model?'on':''}" onclick="switchModel('${m.id}')">
+      <span class="mo-name">${m.name}</span>
+      <span class="mo-meta">${m.items.length} itens · ${m.blocks.length} blocos temáticos</span>
+    </button>`).join('');
+}
+function switchModel(id){
+  if(!MODELS[id] || id===state.model) return;
+  clearThumbs();
+  state.model=id; applyModel(); filterBlock='all'; save();
+  refreshAll(); renderModelSelector(); renderIdent(); hydrateThumbs();
+  toast('Modelo: '+MODELS[id].name);
+}
 function loadExample(){
-  clearThumbs(); idbClear();
-  state={ company:{...EXAMPLE_COMPANY}, answers:{...EXAMPLE_ANSWERS}, plan:{}, attach:{} };
-  save(); refreshAll(); toast('Exemplo carregado'); go('painel');
+  clearThumbs(); idbClearModel(state.model);
+  state.company={...EXAMPLE_COMPANY};
+  state.models[state.model]=modelData(state.model,true);
+  applyModel(); save(); refreshAll(); renderModelSelector(); toast('Exemplo carregado'); go('painel');
 }
 function resetAudit(){
-  if(!confirm('Iniciar nova auditoria? As respostas atuais serão apagadas.')) return;
-  clearThumbs(); idbClear();
-  state={ company:{razao:'',cnpj:'',endereco:'',atividade:'Fabricação de móveis sob encomenda',grau:'',empregados:'',data:'',auditor:'',cargo:'',representante:''}, answers:{}, plan:{}, attach:{} };
-  save(); refreshAll(); toast('Nova auditoria iniciada'); go('empresa');
+  if(!confirm('Iniciar nova auditoria neste modelo? As respostas atuais serão apagadas.')) return;
+  clearThumbs(); idbClearModel(state.model);
+  state.company={razao:'',cnpj:'',endereco:'',atividade:'',grau:'',empregados:'',data:'',auditor:'',cargo:'',representante:''};
+  state.models[state.model]=modelData(state.model,false);
+  applyModel(); save(); refreshAll(); renderModelSelector(); toast('Nova auditoria iniciada'); go('empresa');
 }
 function refreshAll(){ renderTopIndex(); renderFilters(); renderAudit(); renderNavBadge(); }
 
@@ -946,7 +1091,14 @@ renderNav();
 refreshAll();
 renderTopIndex();
 document.querySelectorAll(".brand-logo:not(.rep-logo)").forEach(i=>i.src=LOGO);
+renderModelSelector();
 hydrateThumbs();
+function setAppbarH(){ const ab=document.querySelector('.appbar'); if(ab) document.documentElement.style.setProperty('--appbarH', ab.offsetHeight+'px'); }
+setAppbarH();
+window.addEventListener('resize', setAppbarH);
+window.addEventListener('orientationchange', ()=>setTimeout(setAppbarH,120));
+if(window.ResizeObserver){ const _ab=document.querySelector('.appbar'); if(_ab) new ResizeObserver(setAppbarH).observe(_ab); }
+if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(setAppbarH); }
 </script>
 <script>
 if('serviceWorker' in navigator){
