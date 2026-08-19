@@ -211,6 +211,15 @@ body{
 .pl-acao{font-size:12px; color:var(--muted); line-height:1.45; margin:0 0 11px}
 .pl-acao b{color:var(--text); font-weight:600}
 .pl-fields{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.cipa-tab{margin:9px 0;border:1px solid #CFE9DD;border-radius:9px;overflow:hidden;background:#F6FBF9}
+.cipa-tab .cipa-h{background:var(--brand-2);color:#fff;font-size:11px;font-weight:700;letter-spacing:.02em;padding:7px 10px}
+.cipa-tab table{width:100%;border-collapse:collapse;font-size:12.5px}
+.cipa-tab th,.cipa-tab td{padding:6px 10px;text-align:left;border-bottom:1px solid #E1EFE8}
+.cipa-tab th{background:#EAF3EF;color:var(--brand-2);font-weight:600}
+.cipa-tab td:first-child{font-weight:600;white-space:nowrap;width:42%}
+.cipa-tab .cipa-note{font-size:11px;color:var(--muted);line-height:1.5;padding:8px 10px 9px;margin:0}
+.sesmt-sub{font-size:11px;font-weight:700;color:var(--brand-2);padding:7px 10px 3px;background:#F0F7F4}
+.sesmt-ref{font-weight:500;font-size:10px;color:#B26B00;background:#FFF3E0;border:1px solid #FFE0B2;border-radius:6px;padding:1px 6px;margin-left:6px;text-transform:none;letter-spacing:0}
 .fld{display:flex; flex-direction:column; gap:3px}
 .fld.full{grid-column:1/-1}
 .fld label{font-size:9.5px; font-weight:600; letter-spacing:.06em; text-transform:uppercase; color:var(--faint)}
@@ -269,8 +278,14 @@ body{
 .credit b{color:var(--muted);font-weight:600}
 .rep-credit{text-align:center;font-size:9.5px;color:var(--faint);margin-top:10px;letter-spacing:.02em}
 
-.obsbox{margin-top:8px}
-.obs-lab{display:flex;align-items:center;gap:5px;font-size:11px;font-weight:600;color:var(--muted);margin-bottom:5px}
+.obsbox{margin-top:8px;border-top:1px dashed var(--line);padding-top:8px}
+.obsbox>summary{list-style:none;cursor:pointer}
+.obsbox>summary::-webkit-details-marker{display:none}
+.obs-sum{display:flex;align-items:center;gap:5px;font-size:11.5px;font-weight:600;color:var(--muted)}
+.obs-sum::before{content:'+';font-size:14px;font-weight:700;color:var(--brand-2);margin-right:1px}
+.obsbox[open] .obs-sum::before{content:'–'}
+.obs-dot{width:7px;height:7px;border-radius:50%;background:var(--brand-2);display:inline-block;margin-left:2px}
+.obsbox[open] .obs-ta{margin-top:6px}
 .obs-ta{width:100%;box-sizing:border-box;font-family:var(--body);font-size:13.5px;color:var(--text);background:var(--surface);border:1.5px solid var(--line);border-radius:9px;padding:8px 10px;resize:vertical;line-height:1.4}
 .obs-ta:focus{outline:none;border-color:var(--brand)}
 .row-obs .lab{color:#178A63}
@@ -641,15 +656,16 @@ const Store = (()=>{
    ESTADO
    ============================================================ */
 let state = Store.get('brantech_state');
+const _firstRun = !state;
 if(!state){
-  state = { model:'moveleira', company:{...EXAMPLE_COMPANY}, models:{ moveleira:modelData('moveleira',true), geral:modelData('geral',false) } };
+  state = { model:'moveleira', company:{razao:'',cnpj:'',endereco:'',atividade:'',grau:'',empregados:'',data:'',auditor:'',cargo:'',representante:''}, models:{ moveleira:modelData('moveleira',false), geral:modelData('geral',false), confeccao:modelData('confeccao',false) } };
 } else if(!state.models){
   var old=state;
   state = { model:'moveleira', company: old.company||{...EXAMPLE_COMPANY}, models:{ moveleira:{ answers: old.answers||{...MODELS.moveleira.example}, plan: old.plan||{}, attach: old.attach||{} }, geral:modelData('geral',false) } };
 }
 if(!state.model) state.model='moveleira';
 if(!state.models) state.models={};
-if(!state.models.moveleira) state.models.moveleira=modelData('moveleira',true);
+if(!state.models.moveleira) state.models.moveleira=modelData('moveleira',false);
 if(!state.models.geral) state.models.geral=modelData('geral',false);
 if(!state.models.confeccao) state.models.confeccao=modelData('confeccao',false);
 Store.set('brantech_state', state);
@@ -772,6 +788,10 @@ function renderFilters(){
 }
 function setFilter(b){ filterBlock=b; renderFilters(); renderAudit(); }
 
+const CIPA_TABLE = `<div class="cipa-tab"><div class="cipa-h">Enquadramento da CIPA — NR-05 (Quadro I)</div><table><thead><tr><th>Grau de risco (NR-4)</th><th>Constitui CIPA (com eleição) a partir de</th></tr></thead><tbody><tr><td>Grau 1</td><td>81 empregados</td></tr><tr><td>Grau 2</td><td>51 empregados</td></tr><tr><td>Grau 3</td><td>20 empregados</td></tr><tr><td>Grau 4</td><td>20 empregados</td></tr></tbody></table><p class="cipa-note">Abaixo desses números — ou quando a atividade não se enquadra no Quadro I — a empresa deve designar um responsável (Designado da CIPA), que também recebe o treinamento. O número de membros (efetivos e suplentes) segue o Quadro I da NR-05, cruzando o grau de risco com a faixa de empregados; a CIPA é paritária (mesmo número para empregados e empregador). Acima de 10.000 empregados, acrescenta-se representantes a cada 2.500. Na construção civil (grupos C-18/C-18a), constitui-se CIPA por estabelecimento a partir de 70 trabalhadores; abaixo disso, segue-se a NR-18.</p></div>`;
+function isCipa(it){ return /CIPA/.test(it.req||'') && /constitu|eleit|designad|enquadr|dimensiona/i.test(it.req||''); }
+const SESMT_TABLE = "<div class=\"cipa-tab sesmt-tab\"><div class=\"cipa-h\">Dimensionamento do SESMT — NR-04 (Quadro II)</div><div class=\"sesmt-sub\">Grau de risco 1 <span class=\"sesmt-ref\">referência — confira o Quadro II</span></div><table><thead><tr><th>Nº de empregados</th><th>Composição mínima</th></tr></thead><tbody><tr><td>Até 250</td><td>Sem exigência de SESMT</td></tr><tr><td>251–1.000</td><td>1 Téc</td></tr><tr><td>1.001–3.500</td><td>1 Téc + apoio (Eng* e Méd*, e Aux conforme a faixa)</td></tr><tr><td>3.501–5.000</td><td>2 Téc · 1 Eng · 1 Aux · 1 Méd</td></tr><tr><td>Acima de 5.000</td><td>Ampliar conforme o Quadro II</td></tr></tbody></table><div class=\"sesmt-sub\">Grau de risco 2 <span class=\"sesmt-ref\">referência — confira o Quadro II</span></div><table><thead><tr><th>Nº de empregados</th><th>Composição mínima</th></tr></thead><tbody><tr><td>Até 100</td><td>Sem exigência de SESMT</td></tr><tr><td>101–500</td><td>1 Téc</td></tr><tr><td>501–1.000</td><td>2 Téc + apoio (Eng*/Méd* e Aux)</td></tr><tr><td>Acima de 1.000</td><td>Ampliar conforme o Quadro II (mais Téc + Eng, Aux e Méd)</td></tr></tbody></table><div class=\"sesmt-sub\">Grau de risco 3</div><table><thead><tr><th>Nº de empregados</th><th>Composição mínima</th></tr></thead><tbody><tr><td>101–250</td><td>1 Téc</td></tr><tr><td>251–500</td><td>2 Téc</td></tr><tr><td>501–1.000</td><td>3 Téc · 1 Eng* · 1 Méd*</td></tr><tr><td>1.001–2.000</td><td>4 Téc · 1 Eng · 1 Aux · 1 Méd</td></tr><tr><td>2.001–3.500</td><td>6 Téc · 1 Eng · 2 Aux · 1 Méd</td></tr><tr><td>3.501–5.000</td><td>8 Téc · 2 Eng · 1 Aux · 1 Enf · 2 Méd</td></tr><tr><td>Acima de 5.000 (a cada 4.000)</td><td>+3 Téc · 1 Eng · 1 Aux · 1 Méd</td></tr></tbody></table><div class=\"sesmt-sub\">Grau de risco 4</div><table><thead><tr><th>Nº de empregados</th><th>Composição mínima</th></tr></thead><tbody><tr><td>50–100</td><td>1 Téc</td></tr><tr><td>101–250</td><td>2 Téc · 1 Eng* · 1 Méd*</td></tr><tr><td>251–500</td><td>3 Téc · 1 Eng* · 1 Méd*</td></tr><tr><td>501–1.000</td><td>4 Téc · 1 Eng · 1 Aux · 1 Méd</td></tr><tr><td>1.001–2.000</td><td>5 Téc · 1 Eng · 1 Aux · 1 Méd</td></tr><tr><td>2.001–3.500</td><td>8 Téc · 2 Eng · 2 Aux · 2 Méd</td></tr><tr><td>3.501–5.000</td><td>10 Téc · 3 Eng · 1 Aux · 1 Enf · 3 Méd</td></tr><tr><td>Acima de 5.000 (a cada 4.000)</td><td>+3 Téc · 1 Eng · 1 Aux · 1 Méd</td></tr></tbody></table><p class=\"cipa-note\">Téc = Técnico de Segurança · Eng = Engenheiro de Segurança · Aux = Auxiliar/Técnico de Enfermagem do Trabalho · Enf = Enfermeiro do Trabalho · Méd = Médico do Trabalho. (*) tempo parcial (mín. 3h/dia); os demais em tempo integral. Composição por estabelecimento, cruzando o grau de risco (Quadro I) com o nº de empregados. Abaixo das faixas indicadas não há exigência de SESMT (mantêm-se PGR e PCMSO, que podem ser conduzidos por assessoria externa). Os graus de risco 1 e 2 estão como referência — a composição exata das faixas superiores deve ser confirmada no Quadro II da NR-04.</p></div>";
+function isSesmt(it){ return /SESMT|contrata[çc][aã]o de profissional|profissional espec[íi]fico/i.test(it.req||''); }
 function itemDetail(it){
   let rows='';
   if(it.dica) rows+=`<div class="dtl-sec dtl-dica"><span class="dtl-k">Como verificar · o que analisar</span><div>${it.dica}</div></div>`;
@@ -780,7 +800,7 @@ function itemDetail(it){
   if(it.nr||it.org) rows+=`<div class="orgs">${it.nr?`<span class="org" style="background:#E4EFEA;border-color:#C6E0D3;color:var(--brand-2)">${it.nr}</span>`:''}${(it.org||'').split(' / ').map(o=>`<span class="org">${o}</span>`).join('')}</div>`;
   if(!rows) return '';
   const summary = it.dica ? 'Como verificar em campo' : (it.risco ? 'Risco potencial' : 'Documento esperado e órgãos');
-  return `<div class="detail"><details><summary><span class="caret">▶</span> ${summary}</summary><div class="body">${rows}</div></details></div>`;
+  return `<div class="detail"><details><summary><span class="caret">▶</span> ${summary}</summary><div class="body">${rows}${isCipa(it)?CIPA_TABLE:''}${(isCipa(it)||isSesmt(it))?SESMT_TABLE:''}</div></details></div>`;
 }
 function renderAudit(){
   const list=document.getElementById('audit-list');
@@ -811,10 +831,10 @@ function renderAudit(){
           </label>
           ${attachChips(it.n)}
         </div>
-        <div class="obsbox">
-          <label class="obs-lab"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg> Observação do técnico</label>
+        <details class="obsbox" ${(obs[it.n]||'').trim()?'open':''}>
+          <summary class="obs-sum"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg> Observação do técnico${(obs[it.n]||'').trim()?'<span class="obs-dot" title="há observação"></span>':''}</summary>
           <textarea class="obs-ta" rows="2" placeholder="Anote o que observou neste item — sai no relatório…" oninput="obs[${it.n}]=this.value" onchange="save()">${(obs[it.n]||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>
-        </div>
+        </details>
       </div>`;
     });
   });
@@ -919,6 +939,7 @@ function renderPlano(){
       ${riscoLine}
       <p class="pl-acao"><b>${it.risco?'Recomendação:':'Ação corretiva:'}</b> ${it.acao}</p>
       ${it.servico?`<p class="pl-acao"><b>Serviço Brantech:</b> ${it.servico}</p>`:''}
+      ${isCipa(it)?CIPA_TABLE:''}${(isCipa(it)||isSesmt(it))?SESMT_TABLE:''}
       <div class="pl-fields">
         <div class="fld"><label>Responsável</label><input type="text" value="${(pl.resp||'A definir').replace(/"/g,'&quot;')}" onchange="setPlan(${it.n},'resp',this.value)"></div>
         <div class="fld"><label>Prazo</label><input type="date" value="${pl.prazo||''}" onchange="setPlan(${it.n},'prazo',this.value)"></div>
@@ -967,7 +988,7 @@ async function renderReport(){
         rows+=`<div class="row"><span class="lab">${it.risco?'Recomendação (plano de ação):':'Ação corretiva recomendada:'}</span> ${it.acao}</div>`;
         if(it.servico) rows+=`<div class="row"><span class="lab">Serviço Brantech sugerido:</span> ${it.servico}</div>`;
         const _ob=(obs[it.n]||'').trim(); if(_ob) rows+=`<div class="row row-obs"><span class="lab">Observação do técnico:</span> ${_ob.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>`;
-        ncHtml+=`<div class="nc"><div class="nc-h"><span class="nc-id">${idLine}</span>${badge}</div><dl>${rows}</dl>${evBlock(it.n)}</div>`;
+        ncHtml+=`<div class="nc"><div class="nc-h"><span class="nc-id">${idLine}</span>${badge}</div><dl>${rows}</dl>${isCipa(it)?CIPA_TABLE:''}${(isCipa(it)||isSesmt(it))?SESMT_TABLE:''}${evBlock(it.n)}</div>`;
       });
     });
   }
@@ -1152,6 +1173,7 @@ window.addEventListener('resize', setAppbarH);
 window.addEventListener('orientationchange', ()=>setTimeout(setAppbarH,120));
 if(window.ResizeObserver){ const _ab=document.querySelector('.appbar'); if(_ab) new ResizeObserver(setAppbarH).observe(_ab); }
 if(document.fonts&&document.fonts.ready){ document.fonts.ready.then(setAppbarH); }
+if(_firstRun) go('empresa');
 </script>
 <script>
 if('serviceWorker' in navigator){
