@@ -219,6 +219,18 @@ body{
 .cipa-tab td:first-child{font-weight:600;white-space:nowrap;width:42%}
 .cipa-tab .cipa-note{font-size:11px;color:var(--muted);line-height:1.5;padding:8px 10px 9px;margin:0}
 .sesmt-sub{font-size:11px;font-weight:700;color:var(--brand-2);padding:7px 10px 3px;background:#F0F7F4}
+/* separação entre graus na tabela SESMT */
+.sesmt-grade + .sesmt-grade{margin-top:14px;border-top:3px solid #BFE0D2}
+.sesmt-grade table{margin-bottom:2px}
+/* zebra p/ leitura na tabela CIPA/SESMT */
+.cipa-tab tbody tr:nth-child(even){background:#F6FBF9}
+/* caixa de resultado filtrado (empresa informou grau + nº de empregados) */
+.enq{padding:11px 12px}
+.enq-top{font-size:12.5px;color:var(--text);margin-bottom:7px}
+.enq-verdict{font-size:14px;font-weight:700;padding:9px 12px;border-radius:9px;line-height:1.35}
+.enq-verdict.ok{background:#E7F5EE;color:#12734F;border:1px solid #BFE3D0}
+.enq-verdict.warn{background:#FFF3E0;color:#9A5B00;border:1px solid #FFE0B2}
+.enq-det{font-size:11.5px;color:var(--muted);margin-top:7px;line-height:1.5}
 .sesmt-ref{font-weight:500;font-size:10px;color:#B26B00;background:#FFF3E0;border:1px solid #FFE0B2;border-radius:6px;padding:1px 6px;margin-left:6px;text-transform:none;letter-spacing:0}
 .fld{display:flex; flex-direction:column; gap:3px}
 .fld.full{grid-column:1/-1}
@@ -788,10 +800,55 @@ function renderFilters(){
 }
 function setFilter(b){ filterBlock=b; renderFilters(); renderAudit(); }
 
-const CIPA_TABLE = `<div class="cipa-tab"><div class="cipa-h">Enquadramento da CIPA — NR-05 (Quadro I)</div><table><thead><tr><th>Grau de risco (NR-4)</th><th>Constitui CIPA (com eleição) a partir de</th></tr></thead><tbody><tr><td>Grau 1</td><td>81 empregados</td></tr><tr><td>Grau 2</td><td>51 empregados</td></tr><tr><td>Grau 3</td><td>20 empregados</td></tr><tr><td>Grau 4</td><td>20 empregados</td></tr></tbody></table><p class="cipa-note">Abaixo desses números — ou quando a atividade não se enquadra no Quadro I — a empresa deve designar um responsável (Designado da CIPA), que também recebe o treinamento. O número de membros (efetivos e suplentes) segue o Quadro I da NR-05, cruzando o grau de risco com a faixa de empregados; a CIPA é paritária (mesmo número para empregados e empregador). Acima de 10.000 empregados, acrescenta-se representantes a cada 2.500. Na construção civil (grupos C-18/C-18a), constitui-se CIPA por estabelecimento a partir de 70 trabalhadores; abaixo disso, segue-se a NR-18.</p></div>`;
 function isCipa(it){ return /CIPA/.test(it.req||'') && /constitu|eleit|designad|enquadr|dimensiona/i.test(it.req||''); }
-const SESMT_TABLE = "<div class=\"cipa-tab sesmt-tab\"><div class=\"cipa-h\">Dimensionamento do SESMT — NR-04 (Quadro II)</div><div class=\"sesmt-sub\">Grau de risco 1 <span class=\"sesmt-ref\">referência — confira o Quadro II</span></div><table><thead><tr><th>Nº de empregados</th><th>Composição mínima</th></tr></thead><tbody><tr><td>Até 250</td><td>Sem exigência de SESMT</td></tr><tr><td>251–1.000</td><td>1 Téc</td></tr><tr><td>1.001–3.500</td><td>1 Téc + apoio (Eng* e Méd*, e Aux conforme a faixa)</td></tr><tr><td>3.501–5.000</td><td>2 Téc · 1 Eng · 1 Aux · 1 Méd</td></tr><tr><td>Acima de 5.000</td><td>Ampliar conforme o Quadro II</td></tr></tbody></table><div class=\"sesmt-sub\">Grau de risco 2 <span class=\"sesmt-ref\">referência — confira o Quadro II</span></div><table><thead><tr><th>Nº de empregados</th><th>Composição mínima</th></tr></thead><tbody><tr><td>Até 100</td><td>Sem exigência de SESMT</td></tr><tr><td>101–500</td><td>1 Téc</td></tr><tr><td>501–1.000</td><td>2 Téc + apoio (Eng*/Méd* e Aux)</td></tr><tr><td>Acima de 1.000</td><td>Ampliar conforme o Quadro II (mais Téc + Eng, Aux e Méd)</td></tr></tbody></table><div class=\"sesmt-sub\">Grau de risco 3</div><table><thead><tr><th>Nº de empregados</th><th>Composição mínima</th></tr></thead><tbody><tr><td>101–250</td><td>1 Téc</td></tr><tr><td>251–500</td><td>2 Téc</td></tr><tr><td>501–1.000</td><td>3 Téc · 1 Eng* · 1 Méd*</td></tr><tr><td>1.001–2.000</td><td>4 Téc · 1 Eng · 1 Aux · 1 Méd</td></tr><tr><td>2.001–3.500</td><td>6 Téc · 1 Eng · 2 Aux · 1 Méd</td></tr><tr><td>3.501–5.000</td><td>8 Téc · 2 Eng · 1 Aux · 1 Enf · 2 Méd</td></tr><tr><td>Acima de 5.000 (a cada 4.000)</td><td>+3 Téc · 1 Eng · 1 Aux · 1 Méd</td></tr></tbody></table><div class=\"sesmt-sub\">Grau de risco 4</div><table><thead><tr><th>Nº de empregados</th><th>Composição mínima</th></tr></thead><tbody><tr><td>50–100</td><td>1 Téc</td></tr><tr><td>101–250</td><td>2 Téc · 1 Eng* · 1 Méd*</td></tr><tr><td>251–500</td><td>3 Téc · 1 Eng* · 1 Méd*</td></tr><tr><td>501–1.000</td><td>4 Téc · 1 Eng · 1 Aux · 1 Méd</td></tr><tr><td>1.001–2.000</td><td>5 Téc · 1 Eng · 1 Aux · 1 Méd</td></tr><tr><td>2.001–3.500</td><td>8 Téc · 2 Eng · 2 Aux · 2 Méd</td></tr><tr><td>3.501–5.000</td><td>10 Téc · 3 Eng · 1 Aux · 1 Enf · 3 Méd</td></tr><tr><td>Acima de 5.000 (a cada 4.000)</td><td>+3 Téc · 1 Eng · 1 Aux · 1 Méd</td></tr></tbody></table><p class=\"cipa-note\">Téc = Técnico de Segurança · Eng = Engenheiro de Segurança · Aux = Auxiliar/Técnico de Enfermagem do Trabalho · Enf = Enfermeiro do Trabalho · Méd = Médico do Trabalho. (*) tempo parcial (mín. 3h/dia); os demais em tempo integral. Composição por estabelecimento, cruzando o grau de risco (Quadro I) com o nº de empregados. Abaixo das faixas indicadas não há exigência de SESMT (mantêm-se PGR e PCMSO, que podem ser conduzidos por assessoria externa). Os graus de risco 1 e 2 estão como referência — a composição exata das faixas superiores deve ser confirmada no Quadro II da NR-04.</p></div>";
 function isSesmt(it){ return /SESMT|contrata[çc][aã]o de profissional|profissional espec[íi]fico/i.test(it.req||''); }
+
+/* ---- Enquadramento CIPA (NR-05) e SESMT (NR-04, Quadro II) ---- */
+const CIPA_THRESHOLDS = {1:81, 2:51, 3:20, 4:20};
+const CIPA_NOTE = 'Abaixo desses números — ou quando a atividade não se enquadra no Quadro I — a empresa deve designar um responsável (Designado da CIPA), que também recebe o treinamento. O número de membros (efetivos e suplentes) segue o Quadro I da NR-05, cruzando o grau de risco com a faixa de empregados; a CIPA é paritária (mesmo número para empregados e empregador). Acima de 10.000 empregados, acrescenta-se representantes a cada 2.500. Na construção civil (grupos C-18/C-18a), constitui-se CIPA por estabelecimento a partir de 70 trabalhadores; abaixo disso, segue-se a NR-18.';
+const SESMT_NOTE = 'Téc = Técnico de Segurança · Eng = Engenheiro de Segurança · Aux = Auxiliar/Técnico de Enfermagem do Trabalho · Enf = Enfermeiro do Trabalho · Méd = Médico do Trabalho. (*) tempo parcial (mín. 3h/dia); os demais em tempo integral. Composição por estabelecimento, cruzando o grau de risco (Quadro I) com o nº de empregados. Abaixo das faixas indicadas não há exigência de SESMT (mantêm-se PGR e PCMSO, que podem ser conduzidos por assessoria externa). Os graus de risco 1 e 2 estão como referência — a composição exata das faixas superiores deve ser confirmada no Quadro II da NR-04.';
+const SESMT_REF = {1:true,2:true,3:false,4:false};
+const SESMT_ROWS = {
+  1:[[0,250,'Até 250','Sem exigência de SESMT'],[251,1000,'251–1.000','1 Téc'],[1001,3500,'1.001–3.500','1 Téc + apoio (Eng* e Méd*, e Aux conforme a faixa)'],[3501,5000,'3.501–5.000','2 Téc · 1 Eng · 1 Aux · 1 Méd'],[5001,null,'Acima de 5.000','Ampliar conforme o Quadro II']],
+  2:[[0,100,'Até 100','Sem exigência de SESMT'],[101,500,'101–500','1 Téc'],[501,1000,'501–1.000','2 Téc + apoio (Eng*/Méd* e Aux)'],[1001,null,'Acima de 1.000','Ampliar conforme o Quadro II (mais Téc + Eng, Aux e Méd)']],
+  3:[[0,100,'Até 100','Sem exigência de SESMT'],[101,250,'101–250','1 Téc'],[251,500,'251–500','2 Téc'],[501,1000,'501–1.000','3 Téc · 1 Eng* · 1 Méd*'],[1001,2000,'1.001–2.000','4 Téc · 1 Eng · 1 Aux · 1 Méd'],[2001,3500,'2.001–3.500','6 Téc · 1 Eng · 2 Aux · 1 Méd'],[3501,5000,'3.501–5.000','8 Téc · 2 Eng · 1 Aux · 1 Enf · 2 Méd'],[5001,null,'Acima de 5.000 (a cada 4.000)','+3 Téc · 1 Eng · 1 Aux · 1 Méd']],
+  4:[[0,49,'Até 49','Sem exigência de SESMT'],[50,100,'50–100','1 Téc'],[101,250,'101–250','2 Téc · 1 Eng* · 1 Méd*'],[251,500,'251–500','3 Téc · 1 Eng* · 1 Méd*'],[501,1000,'501–1.000','4 Téc · 1 Eng · 1 Aux · 1 Méd'],[1001,2000,'1.001–2.000','5 Téc · 1 Eng · 1 Aux · 1 Méd'],[2001,3500,'2.001–3.500','8 Téc · 2 Eng · 2 Aux · 2 Méd'],[3501,5000,'3.501–5.000','10 Téc · 3 Eng · 1 Aux · 1 Enf · 3 Méd'],[5001,null,'Acima de 5.000 (a cada 4.000)','+3 Téc · 1 Eng · 1 Aux · 1 Méd']]
+};
+function coEnq(co){ co=co||{}; const gm=String(co.grau||'').match(/[1-4]/); const nm=String(co.empregados||'').replace(/[^0-9]/g,''); const grau=gm?parseInt(gm[0]):null; const emp=nm?parseInt(nm):null; return {grau, emp:(emp&&emp>0)?emp:null}; }
+
+function cipaFullTable(){
+  let rows=''; [1,2,3,4].forEach(g=>{ rows+=`<tr><td>Grau ${g}</td><td>${CIPA_THRESHOLDS[g]} empregados</td></tr>`; });
+  return `<div class="cipa-tab"><div class="cipa-h">Enquadramento da CIPA — NR-05 (Quadro I)</div><table><thead><tr><th>Grau de risco (NR-4)</th><th>Constitui CIPA (com eleição) a partir de</th></tr></thead><tbody>${rows}</tbody></table><p class="cipa-note">${CIPA_NOTE}</p></div>`;
+}
+function cipaTableFor(co){
+  const e=coEnq(co);
+  if(e.grau&&e.emp){
+    const th=CIPA_THRESHOLDS[e.grau]; const ok=e.emp>=th;
+    const verdict= ok?'Constitui CIPA (com eleição)':'Designar responsável (Designado da CIPA)';
+    const det= ok?`A CIPA com eleição é obrigatória a partir de ${th} empregados para o grau de risco ${e.grau} — a empresa se enquadra.`:`Para o grau de risco ${e.grau}, a CIPA com eleição é exigida a partir de ${th} empregados. Abaixo disso, designa-se um responsável treinado.`;
+    return `<div class="cipa-tab"><div class="cipa-h">Enquadramento da CIPA — NR-05</div><div class="enq"><div class="enq-top"><b>Grau de risco ${e.grau}</b> · ${e.emp} empregados</div><div class="enq-verdict ${ok?'ok':'warn'}">${verdict}</div><div class="enq-det">${det}</div></div><p class="cipa-note">${CIPA_NOTE}</p></div>`;
+  }
+  return cipaFullTable();
+}
+
+function sesmtGradeTable(g){
+  const ref=SESMT_REF[g]; let rows='';
+  SESMT_ROWS[g].forEach(r=>{ rows+=`<tr><td>${r[2]}</td><td>${r[3]}</td></tr>`; });
+  return `<div class="sesmt-grade"><div class="sesmt-sub">Grau de risco ${g}${ref?' <span class="sesmt-ref">referência — confira o Quadro II</span>':''}</div><table><thead><tr><th>Nº de empregados</th><th>Composição mínima</th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+function sesmtFullTable(){
+  return `<div class="cipa-tab sesmt-tab"><div class="cipa-h">Dimensionamento do SESMT — NR-04 (Quadro II)</div>${[1,2,3,4].map(sesmtGradeTable).join('')}<p class="cipa-note">${SESMT_NOTE}</p></div>`;
+}
+function sesmtTableFor(co){
+  const e=coEnq(co);
+  if(e.grau&&e.emp){
+    let row=null; SESMT_ROWS[e.grau].forEach(r=>{ if(e.emp>=r[0] && (r[1]===null||e.emp<=r[1])) row=r; });
+    const comp=row?row[3]:'Sem exigência de SESMT'; const faixa=row?row[2]:'abaixo da faixa mínima'; const isento=/Sem exig/i.test(comp); const ref=SESMT_REF[e.grau];
+    return `<div class="cipa-tab sesmt-tab"><div class="cipa-h">Dimensionamento do SESMT — NR-04 (Quadro II)</div><div class="enq"><div class="enq-top"><b>Grau de risco ${e.grau}</b> · ${e.emp} empregados${ref?' <span class="sesmt-ref">referência</span>':''}</div><div class="enq-verdict ${isento?'warn':'ok'}">${comp}</div><div class="enq-det">Faixa: ${faixa}.</div></div><p class="cipa-note">${SESMT_NOTE}</p></div>`;
+  }
+  return sesmtFullTable();
+}
+
 function itemDetail(it){
   let rows='';
   if(it.dica) rows+=`<div class="dtl-sec dtl-dica"><span class="dtl-k">Como verificar · o que analisar</span><div>${it.dica}</div></div>`;
@@ -800,7 +857,7 @@ function itemDetail(it){
   if(it.nr||it.org) rows+=`<div class="orgs">${it.nr?`<span class="org" style="background:#E4EFEA;border-color:#C6E0D3;color:var(--brand-2)">${it.nr}</span>`:''}${(it.org||'').split(' / ').map(o=>`<span class="org">${o}</span>`).join('')}</div>`;
   if(!rows) return '';
   const summary = it.dica ? 'Como verificar em campo' : (it.risco ? 'Risco potencial' : 'Documento esperado e órgãos');
-  return `<div class="detail"><details><summary><span class="caret">▶</span> ${summary}</summary><div class="body">${rows}${isCipa(it)?CIPA_TABLE:''}${(isCipa(it)||isSesmt(it))?SESMT_TABLE:''}</div></details></div>`;
+  return `<div class="detail"><details><summary><span class="caret">▶</span> ${summary}</summary><div class="body">${rows}${isCipa(it)?cipaTableFor(state.company):''}${(isCipa(it)||isSesmt(it))?sesmtTableFor(state.company):''}</div></details></div>`;
 }
 function renderAudit(){
   const list=document.getElementById('audit-list');
@@ -938,8 +995,7 @@ function renderPlano(){
       <p class="pl-req">${it.req}</p>
       ${riscoLine}
       <p class="pl-acao"><b>${it.risco?'Recomendação:':'Ação corretiva:'}</b> ${it.acao}</p>
-      ${it.servico?`<p class="pl-acao"><b>Serviço Brantech:</b> ${it.servico}</p>`:''}
-      ${isCipa(it)?CIPA_TABLE:''}${(isCipa(it)||isSesmt(it))?SESMT_TABLE:''}
+      ${isCipa(it)?cipaTableFor(state.company):''}${(isCipa(it)||isSesmt(it))?sesmtTableFor(state.company):''}
       <div class="pl-fields">
         <div class="fld"><label>Responsável</label><input type="text" value="${(pl.resp||'A definir').replace(/"/g,'&quot;')}" onchange="setPlan(${it.n},'resp',this.value)"></div>
         <div class="fld"><label>Prazo</label><input type="date" value="${pl.prazo||''}" onchange="setPlan(${it.n},'prazo',this.value)"></div>
@@ -988,7 +1044,7 @@ async function renderReport(){
         rows+=`<div class="row"><span class="lab">${it.risco?'Recomendação (plano de ação):':'Ação corretiva recomendada:'}</span> ${it.acao}</div>`;
         if(it.servico) rows+=`<div class="row"><span class="lab">Serviço Brantech sugerido:</span> ${it.servico}</div>`;
         const _ob=(obs[it.n]||'').trim(); if(_ob) rows+=`<div class="row row-obs"><span class="lab">Observação do técnico:</span> ${_ob.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>`;
-        ncHtml+=`<div class="nc"><div class="nc-h"><span class="nc-id">${idLine}</span>${badge}</div><dl>${rows}</dl>${isCipa(it)?CIPA_TABLE:''}${(isCipa(it)||isSesmt(it))?SESMT_TABLE:''}${evBlock(it.n)}</div>`;
+        ncHtml+=`<div class="nc"><div class="nc-h"><span class="nc-id">${idLine}</span>${badge}</div><dl>${rows}</dl>${isCipa(it)?cipaTableFor(state.company):''}${(isCipa(it)||isSesmt(it))?sesmtTableFor(state.company):''}${evBlock(it.n)}</div>`;
       });
     });
   }
@@ -1116,6 +1172,7 @@ function go(id){
   document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('on'));
   document.getElementById('nav-'+id).classList.add('on');
   window.scrollTo({top:0,behavior:'instant'});
+  if(id==='auditoria') renderAudit();
   if(id==='painel') renderPainel();
   if(id==='plano') renderPlano();
   if(id==='relatorio') renderReport();
