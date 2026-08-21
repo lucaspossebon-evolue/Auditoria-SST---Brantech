@@ -2,7 +2,7 @@
    HTML: network-first (sempre pega a versão mais nova online; usa cache só offline).
    Estáticos (ícones/manifest) e fontes: cache-first.
    Troque o número em CACHE ao editar o app. */
-const CACHE = 'brantech-sst-v20';
+const CACHE = 'brantech-sst-v21';
 const FONTS = 'brantech-fonts-v1';
 const SHELL = [
   './',
