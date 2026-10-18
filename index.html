@@ -183,7 +183,13 @@ body{
 .nc-ev{margin-top:9px;border-top:1px solid var(--line-2);padding-top:8px}
 .nc-ev .ev-h{font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--brand-2);margin-bottom:6px}
 .nc-ev .ev-imgs{display:flex;flex-wrap:wrap;gap:8px;align-items:flex-start}
-.nc-ev .ev-imgs img{height:130px;width:auto;max-width:100%;border:1px solid var(--line);border-radius:6px;object-fit:cover}
+.nc-ev .ev-imgs img{height:130px;width:auto;max-width:100%;border:1px solid var(--line);border-radius:6px;object-fit:cover;cursor:pointer}
+.nc-ev .ev-imgs img.ev-img:active{opacity:.85}
+.lightbox{display:none;position:fixed;inset:0;z-index:1000;background:rgba(6,24,19,.94);align-items:center;justify-content:center;padding:calc(14px + env(safe-area-inset-top)) 14px calc(14px + env(safe-area-inset-bottom))}
+.lightbox.on{display:flex}
+.lightbox img{max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 8px 40px rgba(0,0,0,.5)}
+.lightbox .lb-close{position:fixed;top:calc(10px + env(safe-area-inset-top));right:14px;width:40px;height:40px;border-radius:50%;border:none;background:rgba(255,255,255,.14);color:#fff;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center}
+.lightbox .lb-close:active{background:rgba(255,255,255,.28)}
 .nc-ev .ev-file{font-size:10.5px;color:var(--muted);background:var(--surface-2);border:1px solid var(--line);border-radius:6px;padding:6px 9px}
 
 /* ---------- Dashboard ---------- */
@@ -376,13 +382,16 @@ body{
 /* ---------- Print ---------- */
 @media print{
   body{background:#fff}
-  .appbar,.topbar,.subbar,.nav,.rep-toolbar,.rep-note,.toast{display:none !important}
+  .appbar,.topbar,.subbar,.nav,.rep-toolbar,.rep-note,.toast,.lightbox{display:none !important}
   .app{max-width:100%; padding:0}
   .screen{display:none !important; padding:0}
   #scr-relatorio{display:block !important}
   .doc{border:none; box-shadow:none; border-radius:0; padding:0; font-size:11pt}
   .nc,.doc table.t{page-break-inside:avoid}
-  .nc-ev img{max-height:115px}
+  /* No PDF: fotos em tamanho médio (legíveis se impressas), várias por linha */
+  .nc-ev{page-break-inside:auto}
+  .nc-ev .ev-imgs img{ height:6.5cm; width:auto; max-width:100%; object-fit:cover; border:1px solid #ccc; page-break-inside:avoid; break-inside:avoid }
+  .nc-ev .ev-h{page-break-after:avoid}
   .doc h2.s{page-break-after:avoid}
 }
 </style>
@@ -472,6 +481,7 @@ body{
 
   <nav class="nav" id="nav"></nav>
   <div class="toast" id="toast"></div>
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()"><button class="lb-close" aria-label="Fechar">✕</button><img id="lightbox-img" src="" alt="Foto da evidência"></div>
 </div>
 
 <script>
@@ -1120,6 +1130,8 @@ function setPlan(n,k,v){ plan[n]=plan[n]||{}; plan[n][k]=v; save(); }
 /* ============================================================
    RENDER — Relatório executivo
    ============================================================ */
+function openLightbox(src){ const lb=document.getElementById('lightbox'); document.getElementById('lightbox-img').src=src; lb.classList.add('on'); document.body.style.overflow='hidden'; }
+function closeLightbox(){ const lb=document.getElementById('lightbox'); lb.classList.remove('on'); document.getElementById('lightbox-img').removeAttribute('src'); document.body.style.overflow=''; }
 async function renderReport(){
   const M=MODELS[state.model]; const hasPri=M.hasPriority;
   M.servHead = ITEMS.some(it=>it.servico);
@@ -1134,7 +1146,7 @@ async function renderReport(){
   const evMap={};
   for(const it of ncs){ for(const a of (attach[it.n]||[])){ if((a.type||'').indexOf('image')===0){ try{ const rec=await idbGet(a.id); if(rec&&rec.blob) evMap[a.id]=await blobToDataURL(rec.blob); }catch(e){} } } }
   for(const a of (attach['G']||[])){ if((a.type||'').indexOf('image')===0){ try{ const rec=await idbGet(a.id); if(rec&&rec.blob) evMap[a.id]=await blobToDataURL(rec.blob); }catch(e){} } }
-  const evBlock=(n)=>{ const list=attach[n]||[]; if(!list.length) return ''; const inner=list.map(a=>{ const nm=(a.name||'documento').replace(/</g,'&lt;'); if((a.type||'').indexOf('image')===0 && evMap[a.id]) return `<img src="${evMap[a.id]}" alt="${nm.replace(/"/g,'&quot;')}">`; return `<span class="ev-file">${nm}</span>`; }).join(''); return `<div class="nc-ev"><div class="ev-h">Evidências anexadas (${list.length})</div><div class="ev-imgs">${inner}</div></div>`; };
+  const evBlock=(n)=>{ const list=attach[n]||[]; if(!list.length) return ''; const inner=list.map(a=>{ const nm=(a.name||'documento').replace(/</g,'&lt;'); if((a.type||'').indexOf('image')===0 && evMap[a.id]) return `<img class="ev-img" src="${evMap[a.id]}" alt="${nm.replace(/"/g,'&quot;')}" onclick="openLightbox(this.src)">`; return `<span class="ev-file">${nm}</span>`; }).join(''); return `<div class="nc-ev"><div class="ev-h">Evidências anexadas (${list.length})</div><div class="ev-imgs">${inner}</div></div>`; };
 
   let blockRows='';
   BLOCKS.forEach((bn,i)=>{ const pb=s.perBlock[i]; blockRows+=`<tr><td>${bn}</td><td class="c">${pb.total}</td><td class="c">${pb.C}</td><td class="c">${pb.NC}</td><td class="c">${pb.NA}</td><td class="c">${fmtPct(blockPct(pb))}</td></tr>`; });
