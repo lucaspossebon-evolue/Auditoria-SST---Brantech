@@ -432,7 +432,7 @@ body{
     <div class="scr-head"><h1>Identificação da auditoria</h1><p>Dados que alimentam o cabeçalho do relatório executivo.</p></div>
     <div class="card pad" style="margin-bottom:14px">
       <label style="display:block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:9px">Minhas auditorias</label>
-      <div id="audit-list"></div>
+      <div id="audit-mgr"></div>
     </div>
     <div class="card pad" style="margin-bottom:14px">
       <label style="display:block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:9px">Modelo de auditoria</label>
@@ -796,7 +796,7 @@ function renameAudit(id){ var a=state.audits[id]; if(!a) return; var nm=prompt('
 function idbClearAudit(a){ var ids=[]; Object.keys(a.models||{}).forEach(function(mk){ var d=a.models[mk]; Object.keys(d.attach||{}).forEach(function(kk){ (d.attach[kk]||[]).forEach(function(x){ if(x&&x.id) ids.push(x.id); }); }); }); ids.forEach(function(id){ try{ idbDel(id); }catch(e){} }); }
 function deleteAudit(id){ var a=state.audits[id]; if(!a) return; if(!confirm('Excluir a auditoria "'+auditName(a)+'"? Isso apaga as respostas e fotos dela. Não dá para desfazer.')) return; idbClearAudit(a); var wasCur=(id===state.currentId); delete state.audits[id]; var ids=Object.keys(state.audits); if(ids.length===0){ var na=blankAudit(); state.audits[na.id]=na; state.currentId=na.id; wasCur=true; } else if(wasCur){ state.currentId=ids[0]; } if(wasCur){ bindAndRefresh(); } else { save(); renderAuditList(); } toast('Auditoria excluída'); }
 function renderAuditList(){
-  var el=document.getElementById('audit-list'); if(!el) return;
+  var el=document.getElementById('audit-mgr'); if(!el) return;
   var items=Object.keys(state.audits).map(function(k){return state.audits[k];}).sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
   el.innerHTML=items.map(function(a){
     var isCur=a.id===state.currentId;
