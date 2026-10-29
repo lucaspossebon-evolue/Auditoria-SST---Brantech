@@ -387,6 +387,8 @@ body{
 .aud-search{width:100%;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13px;margin-bottom:11px;background:var(--surface);color:var(--text);font-family:var(--body)}
 .aud-search:focus{outline:none;border-color:var(--brand)}
 .aud-info{font-size:11px;color:var(--muted);margin:4px 0 8px;text-align:center}
+.empty-state{text-align:center;color:var(--muted);font-size:13px;line-height:1.7;padding:46px 22px}
+.aud-empty-first{text-align:center;color:var(--muted);font-size:13px;line-height:1.7;padding:16px 10px 14px}
 .aud-empty{font-size:12.5px;color:var(--muted);padding:14px;text-align:center}
 .aud-item{display:flex;
 ; align-items:stretch; gap:6px; border:1.5px solid var(--line); border-radius:11px; margin-bottom:8px; background:var(--surface); overflow:hidden}
@@ -785,13 +787,13 @@ let state;
   if(raw && raw.audits && raw.currentId){ state = raw; }
   else if(raw && raw.models){ const a={ id:newId(), createdAt:Date.now(), updatedAt:Date.now(), finalized:false, name:'', model:(ACTIVE_MODELS.indexOf(raw.model)>=0?raw.model:ACTIVE_MODELS[0]), company:raw.company||blankCompany(), models:raw.models }; state={ currentId:a.id, audits:{} }; state.audits[a.id]=a; }
   else if(raw && (raw.answers||raw.company)){ const a=blankAudit(); a.company=raw.company||blankCompany(); if(raw.answers) a.models.moveleira.answers=raw.answers; if(raw.plan) a.models.moveleira.plan=raw.plan; state={ currentId:a.id, audits:{} }; state.audits[a.id]=a; }
-  else { const a=blankAudit(); state={ currentId:a.id, audits:{} }; state.audits[a.id]=a; }
+  else { state={ currentId:null, audits:{} }; }
 }
 Object.keys(state.audits).forEach(function(k){ var a=state.audits[k]; if(!a.id)a.id=k; if(!a.models)a.models={}; if(!a.models.moveleira)a.models.moveleira=modelData('moveleira',false); if(!a.models.geral)a.models.geral=modelData('geral',false); if(!a.models.confeccao)a.models.confeccao=modelData('confeccao',false); if(ACTIVE_MODELS.indexOf(a.model)<0)a.model=ACTIVE_MODELS[0]; if(!a.company)a.company=blankCompany(); if(a.finalized===undefined)a.finalized=false; if(a.createdAt===undefined)a.createdAt=Date.now(); if(a.updatedAt===undefined)a.updatedAt=a.createdAt; });
-if(!state.audits[state.currentId]) state.currentId=Object.keys(state.audits)[0];
+if(!state.audits[state.currentId]){ var _ks=Object.keys(state.audits); state.currentId=_ks.length?_ks[0]:null; }
 function cur(){ return state.models[state.model]; }
 function applyModel(){ const m=MODELS[state.model]; BLOCKS=m.blocks; ITEMS=m.items; const d=cur(); if(!d.obs)d.obs={}; if(!d.paradigmas)d.paradigmas=[]; answers=d.answers; plan=d.plan; attach=d.attach; obs=d.obs; paradigmas=d.paradigmas; }
-function bindCurrent(){ const a=A(); state.model=a.model; state.company=a.company; state.models=a.models; applyModel(); }
+function bindCurrent(){ var a=A(); if(!a){ state.model=ACTIVE_MODELS[0]; state.company=blankCompany(); answers={}; plan={}; attach={}; obs={}; paradigmas=[]; var m=MODELS[state.model]; BLOCKS=m.blocks; ITEMS=m.items; state.models={}; state.models[state.model]={answers:answers,plan:plan,attach:attach,obs:obs,paradigmas:paradigmas}; return; } state.model=a.model; state.company=a.company; state.models=a.models; applyModel(); }
 bindCurrent();
 Store.set('brantech_state', { currentId:state.currentId, audits:state.audits });
 let filterBlock = 'all';
@@ -820,7 +822,7 @@ function duplicateAudit(){
 function finalizeAudit(id){ var a=state.audits[id]; if(!a) return; a.finalized=!a.finalized; a.updatedAt=Date.now(); save(); renderAuditList(); toast(a.finalized?'Auditoria finalizada':'Auditoria reaberta'); }
 function renameAudit(id){ var a=state.audits[id]; if(!a) return; var nm=prompt('Nome da auditoria (deixe em branco para usar a razão social):', a.name||''); if(nm===null) return; a.name=(nm||'').trim(); a.updatedAt=Date.now(); save(); renderAuditList(); }
 function idbClearAudit(a){ var ids=[]; Object.keys(a.models||{}).forEach(function(mk){ var d=a.models[mk]; Object.keys(d.attach||{}).forEach(function(kk){ (d.attach[kk]||[]).forEach(function(x){ if(x&&x.id) ids.push(x.id); }); }); }); ids.forEach(function(id){ try{ idbDel(id); }catch(e){} }); }
-function deleteAudit(id){ var a=state.audits[id]; if(!a) return; if(!confirm('Excluir a auditoria "'+auditName(a)+'"? Isso apaga as respostas e fotos dela. Não dá para desfazer.')) return; idbClearAudit(a); var wasCur=(id===state.currentId); delete state.audits[id]; var ids=Object.keys(state.audits); if(ids.length===0){ var na=blankAudit(); state.audits[na.id]=na; state.currentId=na.id; wasCur=true; } else if(wasCur){ state.currentId=ids[0]; } if(wasCur){ bindAndRefresh(); } else { save(); renderAuditList(); } toast('Auditoria excluída'); }
+function deleteAudit(id){ var a=state.audits[id]; if(!a) return; if(!confirm('Excluir a auditoria "'+auditName(a)+'"? Isso apaga as respostas e fotos dela. Não dá para desfazer.')) return; idbClearAudit(a); var wasCur=(id===state.currentId); delete state.audits[id]; var ids=Object.keys(state.audits); if(ids.length===0){ state.currentId=null; wasCur=true; } else if(wasCur){ state.currentId=ids[0]; } if(wasCur){ bindAndRefresh(); } else { save(); renderAuditList(); } toast('Auditoria excluída'); }
 var identOpen=false, auditSearch='';
 function applyEmpresaView(){ var ic=document.getElementById('ident-card'); if(ic) ic.style.display=identOpen?'block':'none'; var t=document.getElementById('ident-title'); if(t){ var a=A(); t.textContent=a?('Dados da auditoria — '+auditName(a)):'Nova auditoria'; } }
 function showIdent(){ identOpen=true; applyEmpresaView(); setTimeout(function(){ var el=document.getElementById('ident-card'); if(el&&el.scrollIntoView){ try{ el.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} } },60); }
@@ -845,6 +847,7 @@ function renderAuditRow(a){
 function renderAuditList(){
   var el=document.getElementById('audit-mgr'); if(!el) return;
   var all=Object.keys(state.audits).map(function(k){return state.audits[k];}).sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
+  if(all.length===0){ el.innerHTML='<div class="aud-empty-first">Você ainda não tem auditorias.<br>Toque em <b>+ Nova auditoria</b> para criar a primeira.</div><button class="aud-new" onclick="newAudit()">+ Nova auditoria</button>'; return; }
   var q=auditSearch, filtered=all;
   if(q){ filtered=all.filter(function(a){ var nm=auditName(a).toLowerCase(); var d=''; try{d=new Date(a.updatedAt).toLocaleDateString('pt-BR');}catch(e){} return nm.indexOf(q)>=0 || d.indexOf(q)>=0; }); }
   var LIMIT=6; var shown = q ? filtered : filtered.slice(0,LIMIT);
@@ -955,7 +958,7 @@ function fmtPct(v){ return v===null?'—':(Math.round(v*10)/10).toString().repla
 /* ============================================================
    RENDER — Auditoria
    ============================================================ */
-function renderFilters(){
+function renderFilters(){ if(noAud()){ var _f=document.getElementById('filters'); if(_f)_f.innerHTML=''; return; }
   const s=stats();
   const el=document.getElementById('filters');
   let h=`<button class="chip ${filterBlock==='all'?'on':''}" onclick="setFilter('all')">Todos<span class="n">${s.evaluated}/${ITEMS.length}</span></button>`;
@@ -1047,7 +1050,9 @@ function paradigmaCard(){
     <button class="para-add" onclick="addParadigma()">+ Adicionar funcionário</button>
   </div>`;
 }
-function renderAudit(){
+function noAud(){ return !A(); }
+var EMPTY_STATE='<div class="empty-state">Nenhuma auditoria aberta.<br>Toque em <b>+ Nova auditoria</b> na aba <b>Empresa</b> para começar.</div>';
+function renderAudit(){ if(noAud()){ var _e=document.getElementById('audit-list'); if(_e)_e.innerHTML=EMPTY_STATE; var _pc=document.getElementById('prog-count'); if(_pc)_pc.textContent='—'; var _pi=document.getElementById('prog-idx'); if(_pi)_pi.textContent=''; var _pb=document.getElementById('prog-bar'); if(_pb)_pb.innerHTML=''; return; }
   const list=document.getElementById('audit-list');
   const s=stats();
   let h='';
@@ -1119,7 +1124,7 @@ function renderProgress(){
   const w=n=>(n/ITEMS.length*100).toFixed(2)+'%';
   bar.innerHTML=`<i class="s-ok" style="width:${w(s.C)}"></i><i class="s-pc" style="width:${w(s.PC)}"></i><i class="s-no" style="width:${w(s.NC)}"></i><i class="s-na" style="width:${w(s.NA)}"></i>`;
 }
-function renderTopIndex(){
+function renderTopIndex(){ if(noAud()){ var a=document.getElementById('hdr-idx'); if(a)a.textContent='—'; var b=document.getElementById('sub-empresa'); if(b)b.textContent='Nenhuma auditoria aberta'; var c=document.getElementById('sub-prog'); if(c)c.textContent='—'; return; }
   const s=stats();
   document.getElementById('hdr-idx').textContent=fmtPct(s.idx);
   document.getElementById('sub-empresa').textContent=(state.company.razao||'—')+' · '+MODELS[state.model].name;
@@ -1129,7 +1134,7 @@ function renderTopIndex(){
 /* ============================================================
    RENDER — Painel
    ============================================================ */
-function renderPainel(){
+function renderPainel(){ if(noAud()){ ['gauge','gauge-meta','pri3','blockbars'].forEach(function(i){var x=document.getElementById(i); if(x)x.innerHTML='';}); var sg=document.getElementById('statgrid'); if(sg)sg.innerHTML=EMPTY_STATE; var p3s=document.getElementById('pri3-sec'); if(p3s)p3s.style.display='none'; return; }
   const s=stats();
   const b=band(s.idx);
   const hasPri=MODELS[state.model].hasPriority;
@@ -1175,7 +1180,7 @@ function statBox(cls,v,l){ return `<div class="stat ${cls}"><div class="v">${v}<
 /* ============================================================
    RENDER — Plano de ação
    ============================================================ */
-function renderPlano(){
+function renderPlano(){ if(noAud()){ var _e=document.getElementById('plan-list'); if(_e)_e.innerHTML=EMPTY_STATE; return; }
   const el=document.getElementById('plan-list');
   const hasPri=MODELS[state.model].hasPriority;
   const rank=it=>answers[it.n]==='NC'?0:1;
@@ -1221,7 +1226,7 @@ function setPlan(n,k,v){ plan[n]=plan[n]||{}; plan[n][k]=v; save(); }
    ============================================================ */
 function openLightbox(src){ const lb=document.getElementById('lightbox'); document.getElementById('lightbox-img').src=src; lb.classList.add('on'); document.body.style.overflow='hidden'; }
 function closeLightbox(){ const lb=document.getElementById('lightbox'); lb.classList.remove('on'); document.getElementById('lightbox-img').removeAttribute('src'); document.body.style.overflow=''; }
-async function renderReport(){
+async function renderReport(){ if(noAud()){ var _e=document.getElementById('report'); if(_e)_e.innerHTML=EMPTY_STATE; return; }
   const M=MODELS[state.model]; const hasPri=M.hasPriority;
   M.servHead = ITEMS.some(it=>it.servico);
   const s=stats(); const b=band(s.idx); const c=state.company;
@@ -1358,7 +1363,7 @@ async function renderReport(){
 /* ============================================================
    RENDER — Identificação
    ============================================================ */
-function renderIdent(){
+function renderIdent(){ if(noAud()){ var _e=document.getElementById('ident-form'); if(_e)_e.innerHTML=''; return; }
   const el=document.getElementById('ident-form');
   el.innerHTML=IDENT_FIELDS.map(([k,l,t])=>`
     <div class="field"><label>${l}</label>
