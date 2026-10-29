@@ -380,7 +380,16 @@ body{
 }
 
 /* ---------- Lista de auditorias ---------- */
-.aud-item{display:flex; align-items:stretch; gap:6px; border:1.5px solid var(--line); border-radius:11px; margin-bottom:8px; background:var(--surface); overflow:hidden}
+.ident-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px}
+.ident-title{font-family:var(--disp);font-weight:700;font-size:14px;color:var(--brand)}
+.ident-close{border:1px solid var(--line);background:var(--surface);color:var(--muted);border-radius:8px;padding:5px 10px;font-size:11.5px;font-weight:600;cursor:pointer}
+.ident-close:active{background:var(--surface-2)}
+.aud-search{width:100%;border:1.5px solid var(--line);border-radius:9px;padding:9px 11px;font-size:13px;margin-bottom:11px;background:var(--surface);color:var(--text);font-family:var(--body)}
+.aud-search:focus{outline:none;border-color:var(--brand)}
+.aud-info{font-size:11px;color:var(--muted);margin:4px 0 8px;text-align:center}
+.aud-empty{font-size:12.5px;color:var(--muted);padding:14px;text-align:center}
+.aud-item{display:flex;
+; align-items:stretch; gap:6px; border:1.5px solid var(--line); border-radius:11px; margin-bottom:8px; background:var(--surface); overflow:hidden}
 .aud-item.cur{border-color:var(--brand-2); box-shadow:0 0 0 1.5px var(--brand-2) inset}
 .aud-main{flex:1; padding:11px 12px; cursor:pointer; min-width:0}
 .aud-nm{font-weight:700; font-size:13.5px; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
@@ -429,29 +438,33 @@ body{
 
   <!-- ===== EMPRESA ===== -->
   <section class="screen" id="scr-empresa">
-    <div class="scr-head"><h1>Identificação da auditoria</h1><p>Dados que alimentam o cabeçalho do relatório executivo.</p></div>
+    <div class="scr-head"><h1>Auditorias</h1><p>Crie uma nova auditoria ou abra uma existente.</p></div>
+
     <div class="card pad" style="margin-bottom:14px">
       <label style="display:block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:9px">Minhas auditorias</label>
+      <input class="aud-search" id="aud-search" type="search" placeholder="Buscar por empresa ou data…" oninput="setAuditSearch(this.value)">
       <div id="audit-mgr"></div>
     </div>
-    <div class="card pad" style="margin-bottom:14px">
-      <label style="display:block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin-bottom:9px">Modelo de auditoria</label>
+
+    <div class="card pad" id="ident-card" style="display:none">
+      <div class="ident-head">
+        <span class="ident-title" id="ident-title">Nova auditoria</span>
+        <button class="ident-close" onclick="hideIdent()">Recolher &#9650;</button>
+      </div>
+      <label style="display:block;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);margin:2px 0 9px">Modelo de auditoria</label>
       <div class="model-sel" id="model-sel"></div>
+      <div class="form-grid" id="ident-form" style="margin-top:14px"></div>
+      <div class="btn-row" style="margin-top:14px">
+        <button class="btn btn-ghost" onclick="duplicateAudit()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          Duplicar auditoria
+        </button>
+        <button class="btn btn-danger" onclick="resetAudit()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.5 2.8L3 8"/><path d="M3 3v5h5"/></svg>
+          Zerar esta auditoria
+        </button>
+      </div>
     </div>
-    <div class="card pad">
-      <div class="form-grid" id="ident-form"></div>
-    </div>
-    <div class="btn-row">
-      <button class="btn btn-ghost" onclick="loadExample()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.5 2.8L3 8"/><path d="M3 3v5h5"/></svg>
-        Carregar exemplo
-      </button>
-      <button class="btn btn-danger" onclick="resetAudit()">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9 9 0 0 0-6.5 2.8L3 8"/><path d="M3 3v5h5"/></svg>
-        Zerar esta auditoria
-      </button>
-    </div>
-    <p class="rep-note" style="margin-top:16px">Use <b>Minhas auditorias</b> acima para criar, abrir, finalizar ou excluir auditorias — dá para manter várias ao mesmo tempo. <b>Carregar exemplo</b> preenche esta auditoria com dados de teste; <b>Zerar esta auditoria</b> limpa só a auditoria aberta.</p>
     <p class="credit">Desenvolvido por <b>Evolue</b> — Treinamento e Desenvolvimento</p>
   </section>
 
@@ -789,31 +802,56 @@ function save(){ var a=A(); if(a){ a.model=state.model; a.company=state.company;
 function auditName(a){ if(a.name&&a.name.trim()) return a.name.trim(); if(a.company&&a.company.razao&&a.company.razao.trim()) return a.company.razao.trim(); return 'Auditoria sem nome'; }
 function auditIndex(a){ const m=a.model, items=MODELS[m].items, ans=(a.models[m]||{}).answers||{}; let C=0,P=0,N=0; items.forEach(function(it){ var v=ans[it.n]; if(v==='C')C++; else if(v==='PC')P++; else if(v==='NC')N++; }); const den=C+P+N; return den? Math.round((C+0.5*P)/den*100) : null; }
 function bindAndRefresh(){ bindCurrent(); filterBlock='all'; save(); refreshAll(); renderModelSelector(); renderIdent(); renderAuditList(); hydrateThumbs(); }
-function openAudit(id){ if(!state.audits[id]) return; state.currentId=id; bindAndRefresh(); toast('Auditoria aberta'); go('empresa'); }
-function newAudit(){ var a=blankAudit(); state.audits[a.id]=a; state.currentId=a.id; bindAndRefresh(); toast('Nova auditoria criada'); go('empresa'); }
+function openAudit(id){ if(!state.audits[id]) return; state.currentId=id; bindAndRefresh(); go('empresa'); showIdent(); toast('Auditoria aberta'); }
+function newAudit(){ var a=blankAudit(); state.audits[a.id]=a; state.currentId=a.id; bindAndRefresh(); go('empresa'); showIdent(); toast('Nova auditoria criada'); }
+function duplicateAudit(){
+  var src=A(); if(!src){ return; }
+  var a=blankAudit();
+  a.model=src.model;
+  a.company=Object.assign({}, src.company||{});
+  a.company.data='';
+  a.name=(auditName(src)+' (cópia)');
+  var sp=(src.models[src.model]&&src.models[src.model].paradigmas)||[];
+  a.models[a.model].paradigmas=sp.map(function(p){ return Object.assign({}, p); });
+  state.audits[a.id]=a; state.currentId=a.id;
+  bindAndRefresh(); go('empresa'); showIdent();
+  toast('Auditoria duplicada — dados da empresa reaproveitados, checklist zerado');
+}
 function finalizeAudit(id){ var a=state.audits[id]; if(!a) return; a.finalized=!a.finalized; a.updatedAt=Date.now(); save(); renderAuditList(); toast(a.finalized?'Auditoria finalizada':'Auditoria reaberta'); }
 function renameAudit(id){ var a=state.audits[id]; if(!a) return; var nm=prompt('Nome da auditoria (deixe em branco para usar a razão social):', a.name||''); if(nm===null) return; a.name=(nm||'').trim(); a.updatedAt=Date.now(); save(); renderAuditList(); }
 function idbClearAudit(a){ var ids=[]; Object.keys(a.models||{}).forEach(function(mk){ var d=a.models[mk]; Object.keys(d.attach||{}).forEach(function(kk){ (d.attach[kk]||[]).forEach(function(x){ if(x&&x.id) ids.push(x.id); }); }); }); ids.forEach(function(id){ try{ idbDel(id); }catch(e){} }); }
 function deleteAudit(id){ var a=state.audits[id]; if(!a) return; if(!confirm('Excluir a auditoria "'+auditName(a)+'"? Isso apaga as respostas e fotos dela. Não dá para desfazer.')) return; idbClearAudit(a); var wasCur=(id===state.currentId); delete state.audits[id]; var ids=Object.keys(state.audits); if(ids.length===0){ var na=blankAudit(); state.audits[na.id]=na; state.currentId=na.id; wasCur=true; } else if(wasCur){ state.currentId=ids[0]; } if(wasCur){ bindAndRefresh(); } else { save(); renderAuditList(); } toast('Auditoria excluída'); }
+var identOpen=false, auditSearch='';
+function applyEmpresaView(){ var ic=document.getElementById('ident-card'); if(ic) ic.style.display=identOpen?'block':'none'; var t=document.getElementById('ident-title'); if(t){ var a=A(); t.textContent=a?('Dados da auditoria — '+auditName(a)):'Nova auditoria'; } }
+function showIdent(){ identOpen=true; applyEmpresaView(); setTimeout(function(){ var el=document.getElementById('ident-card'); if(el&&el.scrollIntoView){ try{ el.scrollIntoView({behavior:'smooth',block:'start'}); }catch(e){} } },60); }
+function hideIdent(){ identOpen=false; applyEmpresaView(); }
+function setAuditSearch(v){ auditSearch=(v||'').toLowerCase().trim(); renderAuditList(); }
+function renderAuditRow(a){
+  var isCur=a.id===state.currentId;
+  var idx=auditIndex(a); var idxstr=idx===null?'—':idx+'%';
+  var dstr=''; try{ if(a.updatedAt){ dstr=new Date(a.updatedAt).toLocaleDateString('pt-BR'); } }catch(e){}
+  var status=a.finalized?'<span class="aud-fin">Finalizada</span>':'<span class="aud-open">Em aberto</span>';
+  return '<div class="aud-item'+(isCur?' cur':'')+'">'
+    +'<div class="aud-main" onclick="openAudit(\''+a.id+'\')">'
+    +'<div class="aud-nm">'+escH(auditName(a))+'</div>'
+    +'<div class="aud-meta">'+(isCur?'<span class="aud-cur">\u25cf Aberta</span> · ':'')+status+' · '+idxstr+' conf.'+(dstr?' · '+dstr:'')+'</div>'
+    +'</div>'
+    +'<div class="aud-acts">'
+    +'<button class="aud-btn" title="'+(a.finalized?'Reabrir':'Finalizar')+'" onclick="finalizeAudit(\''+a.id+'\')">'+(a.finalized?'\u21ba':'\u2713')+'</button>'
+    +'<button class="aud-btn" title="Renomear" onclick="renameAudit(\''+a.id+'\')">\u270e</button>'
+    +'<button class="aud-btn danger" title="Excluir" onclick="deleteAudit(\''+a.id+'\')">\u2715</button>'
+    +'</div></div>';
+}
 function renderAuditList(){
   var el=document.getElementById('audit-mgr'); if(!el) return;
-  var items=Object.keys(state.audits).map(function(k){return state.audits[k];}).sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
-  el.innerHTML=items.map(function(a){
-    var isCur=a.id===state.currentId;
-    var idx=auditIndex(a); var idxstr=idx===null?'—':idx+'%';
-    var dstr=''; try{ if(a.updatedAt){ dstr=new Date(a.updatedAt).toLocaleDateString('pt-BR'); } }catch(e){}
-    var status=a.finalized?'<span class="aud-fin">Finalizada</span>':'<span class="aud-open">Em aberto</span>';
-    return '<div class="aud-item'+(isCur?' cur':'')+'">'
-      +'<div class="aud-main" onclick="openAudit(\''+a.id+'\')">'
-      +'<div class="aud-nm">'+escH(auditName(a))+'</div>'
-      +'<div class="aud-meta">'+(isCur?'<span class="aud-cur">\u25cf Aberta</span> · ':'')+status+' · '+idxstr+' conf.'+(dstr?' · '+dstr:'')+'</div>'
-      +'</div>'
-      +'<div class="aud-acts">'
-      +'<button class="aud-btn" title="'+(a.finalized?'Reabrir':'Finalizar')+'" onclick="finalizeAudit(\''+a.id+'\')">'+(a.finalized?'\u21ba':'\u2713')+'</button>'
-      +'<button class="aud-btn" title="Renomear" onclick="renameAudit(\''+a.id+'\')">\u270e</button>'
-      +'<button class="aud-btn danger" title="Excluir" onclick="deleteAudit(\''+a.id+'\')">\u2715</button>'
-      +'</div></div>';
-  }).join('')+'<button class="aud-new" onclick="newAudit()">+ Nova auditoria</button>';
+  var all=Object.keys(state.audits).map(function(k){return state.audits[k];}).sort(function(a,b){ return (b.updatedAt||0)-(a.updatedAt||0); });
+  var q=auditSearch, filtered=all;
+  if(q){ filtered=all.filter(function(a){ var nm=auditName(a).toLowerCase(); var d=''; try{d=new Date(a.updatedAt).toLocaleDateString('pt-BR');}catch(e){} return nm.indexOf(q)>=0 || d.indexOf(q)>=0; }); }
+  var LIMIT=6; var shown = q ? filtered : filtered.slice(0,LIMIT);
+  var rows = shown.map(renderAuditRow).join('');
+  if(q && filtered.length===0) rows='<div class="aud-empty">Nenhuma auditoria encontrada para \u201c'+escH(auditSearch)+'\u201d.</div>';
+  var info=''; if(!q && all.length>LIMIT) info='<div class="aud-info">Mostrando as '+LIMIT+' mais recentes de '+all.length+'. Use a busca acima para encontrar as demais.</div>';
+  el.innerHTML = rows + info + '<button class="aud-new" onclick="newAudit()">+ Nova auditoria</button>';
 }
 
 /* ---------- Anexos: IndexedDB + compressão de imagem ---------- */
@@ -1365,7 +1403,7 @@ function go(id){
   if(id==='painel') renderPainel();
   if(id==='plano') renderPlano();
   if(id==='relatorio') renderReport();
-  if(id==='empresa'){ renderAuditList(); renderModelSelector(); renderIdent(); }
+  if(id==='empresa'){ renderAuditList(); renderModelSelector(); renderIdent(); applyEmpresaView(); }
 }
 
 /* ============================================================
