@@ -522,7 +522,6 @@ body{
 
   <!-- ===== RELATÓRIO ===== -->
   <section class="screen" id="scr-relatorio">
-    <div class="scr-head"><h1>Relatório executivo</h1><p>Preenchido com base nos resultados da auditoria.</p></div>
     <div class="rep-toolbar">
       <button class="btn btn-primary" onclick="gerarPDF()">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
@@ -1819,7 +1818,7 @@ async function renderReport(){ if(noAud()){ var _e=document.getElementById('repo
     <div class="rep-hdr">
       <img class="brand-logo rep-logo" src="${LOGO}" alt="Brantech — Engenharia de Segurança do Trabalho">
       <div class="ey">Relatório executivo de auditoria</div>
-      <h1>Segurança e Saúde no Trabalho — Conformidade Documental</h1>
+      <h1>Segurança e Saúde no Trabalho</h1>
       <div class="sub">${M.subtitle}</div>
     </div>
     <div class="rep-meta">
