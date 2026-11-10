@@ -1864,7 +1864,7 @@ async function renderReport(){ if(noAud()){ var _e=document.getElementById('repo
     ? `<p>Do total de ${s.total} requisitos avaliados, <b>${s.NC}</b> foram classificados como Não Conformes, sendo <b>${s.pri.Alta}</b> de prioridade Alta, <b>${s.pri['Média']}</b> de prioridade Média e <b>${s.pri.Baixa}</b> de prioridade Baixa. As não conformidades de prioridade Alta representam o maior risco imediato e devem ser tratadas como prioridade máxima no plano de ação.</p>`
     : `<p>Do total de ${s.total} itens avaliados, <b>${s.NC}</b> foram classificados como Não Conformes, <b>${s.PC}</b> como Parcialmente Conformes e <b>${s.C}</b> como Conformes${s.NA?`, além de ${s.NA} não aplicáveis`:''}. Os itens parcialmente conformes contam com metade do peso no índice e, junto às não conformidades, estão associados a uma recomendação específica na seção anterior, que deve orientar a priorização do plano de ação.</p>`;
 
-  let secN=6; let obsExtra='';
+  let secN=8; let obsExtra='';
   {
     const rowsp=paradigmas.filter(p=>(p.nome||'').trim()||(p.funcao||'').trim()||(p.obs||'').trim());
     if(rowsp.length){
@@ -1887,47 +1887,59 @@ async function renderReport(){ if(noAud()){ var _e=document.getElementById('repo
       obsExtra+=`<h2 class="s"><span class="n">${secN}.</span> Itens de atenção e observações gerais</h2><p>Itens de atenção, observações e registro fotográfico geral da visita, complementares aos itens do checklist.</p>${gc}`; secN++;
     }
   }
+  const consolidacao = new Date().toLocaleDateString('pt-BR');
+  const apresentacao = `<p>Este relatório apresenta o resultado da auditoria de Segurança e Saúde no Trabalho realizada na empresa com a finalidade de avaliar as condições de prevenção e a gestão de SST da empresa, identificar possíveis inadequações técnicas e legais e fornecer à direção informações para a definição de prioridades e medidas de melhoria.</p><p>O trabalho buscou verificar a correspondência entre as atividades desenvolvidas, os riscos ocupacionais identificados e as medidas de proteção adotadas, considerando os requisitos trabalhistas e previdenciários aplicáveis. A avaliação contemplou tanto a documentação quanto as condições operacionais registradas durante a auditoria, reconhecendo que a prevenção depende da implementação efetiva das medidas e de sua manutenção na rotina de trabalho.</p>`;
+  const metodUtil = `<p>A avaliação foi conduzida por meio de roteiro estruturado em temas, com perguntas relacionadas aos processos, equipamentos, exposições ocupacionais e obrigações aplicáveis à empresa. A abrangência das verificações e as evidências examinadas estão identificadas nos resultados deste relatório.</p><p>A metodologia combinou a análise dos documentos disponibilizados com os registros de inspeção dos ambientes, as observações das atividades e as informações obtidas durante a auditoria. O cruzamento dessas evidências permitiu examinar a compatibilidade entre os registros formais e as condições de trabalho, respeitados os limites de acesso e da amostragem.</p><p>Para cada item foi avaliada a conformidade (Conforme, Não Conforme, Parcial ou Não Aplicável) e, para cada não conformidade ou Parcial, foram registrados o risco potencial associado e a recomendação de regularização, que compõem o plano de ação.</p>`;
+  const apresResultados = `<p>A fundamentação dos resultados considerou as Normas Regulamentadoras e os demais requisitos aplicáveis à situação examinada. Foram diferenciadas as obrigações legais das recomendações de melhoria, bem como as exigências gerais daquelas condicionadas à existência de determinada atividade, equipamento ou exposição.</p><p>${nivelSentence}</p><p>As conclusões estão limitadas ao período, aos locais e às evidências examinadas.</p><p>As recomendações foram formuladas para apoiar a correção das causas dos desvios e o aprimoramento da prevenção. Sua prioridade considera a gravidade das possíveis consequências, a exposição dos trabalhadores e os controles existentes. Assim, condições com potencial de lesão grave recebem atenção prioritária, independentemente da quantidade de pendências documentais.</p><p>Os resultados abaixo apresentados foram organizados por item avaliado, permitindo ao empregador identificar o requisito examinado, as evidências disponíveis, a conclusão da avaliação e a recomendação correspondente.</p>`;
   document.getElementById('report').innerHTML=`
     <div class="rep-hdr">
       <img class="brand-logo rep-logo" src="${LOGO}" alt="Brantech — Engenharia de Segurança do Trabalho">
-      <div class="ey">Relatório executivo de auditoria</div>
-      <h1>Segurança e Saúde no Trabalho</h1>
+      <div class="ey">Relatório de auditoria</div>
+      <h1>Auditoria de Segurança e Saúde no Trabalho</h1>
       <div class="sub">${M.subtitle}</div>
     </div>
     <div class="rep-meta">
-      <div><span class="k">${c.razao||'[Razão social]'}</span></div>
-      <div>CNPJ: ${c.cnpj||'[CNPJ]'} · ${c.endereco||'[Endereço]'}</div>
-      <div>Nº de empregados: ${c.empregados||'—'} · Grau de risco (NR-4): ${c.grau||'—'}</div>
-      <div>Data da auditoria: ${dataFmt}</div>
-      <div>Responsável técnico: ${c.auditor||'[Auditor]'} — ${c.cargo||''}</div>
-      <div>Modelo de auditoria: ${M.name}</div>
+      <div><span class="k">Empresa: ${c.razao||'[Razão social]'}</span></div>
+      <div>CNPJ: ${c.cnpj||'[CNPJ]'}</div>
+      <div>Endereço: ${c.endereco||'[Endereço]'}</div>
+      <div>Atividade principal / CNAE: ${c.atividade||'—'}</div>
+      <div>Nº de empregados: ${c.empregados||'—'}</div>
+      <div>Grau de risco: ${c.grau||'—'}</div>
+      <div>Data da auditoria de origem: ${dataFmt}</div>
+      <div>Consolidação deste relatório: ${consolidacao}</div>
+      <div>Responsável técnico: ${c.auditor||'[Auditor]'}${c.cargo?' — '+c.cargo:''}</div>
     </div>
 
-    <h2 class="s"><span class="n">1.</span> Sumário Executivo</h2>
-    <p>Este relatório apresenta o resultado da auditoria documental de Segurança e Saúde no Trabalho (SST) realizada em ${c.razao||'[empresa]'}, ${setorPhrase}, com o objetivo de verificar o cumprimento das obrigações estabelecidas pelas Normas Regulamentadoras, pelo eSocial e pela legislação previdenciária, e de identificar os pontos passíveis de questionamento pelo MTE, MPT, entidades sindicais e pela Previdência Social (INSS).</p>
-    <p>${nivelSentence}</p>
+    <h2 class="s"><span class="n">1.</span> Apresentação</h2>
+    ${apresentacao}
+
+    <h2 class="s"><span class="n">2.</span> Metodologia utilizada</h2>
+    ${metodUtil}
+
+    <h2 class="s"><span class="n">3.</span> Apresentação dos resultados</h2>
+    ${apresResultados}
+
+    <h2 class="s"><span class="n">4.</span> Resumo dos indicadores</h2>
     <table class="t">
       <tr><th>Indicador</th><th class="c" style="width:90px">Valor</th></tr>
       <tr><td>Total de itens avaliados</td><td class="c">${s.total}</td></tr>
       <tr><td>Itens conformes (C)</td><td class="c">${s.C}</td></tr>
+      <tr><td>Itens parcialmente conformes (PC)</td><td class="c">${s.PC}</td></tr>
       <tr><td>Itens não conformes (NC)</td><td class="c">${s.NC}</td></tr>
       <tr><td>Itens não aplicáveis (N/A)</td><td class="c">${s.NA}</td></tr>
       <tr class="tot"><td>Percentual de conformidade</td><td class="c">${fmtPct(s.idx)}</td></tr>
     </table>
 
-    <h2 class="s"><span class="n">2.</span> Metodologia</h2>
-    ${metodologia}
-
-    <h2 class="s"><span class="n">3.</span> Resultado Geral por Bloco</h2>
+    <h2 class="s"><span class="n">5.</span> Resultado por bloco</h2>
     <table class="t">
       <tr><th>Bloco temático</th><th class="c">Total</th><th class="c">Conf.</th><th class="c">N.C.</th><th class="c">N/A</th><th class="c">% Conf.</th></tr>
       ${blockRows}
     </table>
 
-    <h2 class="s"><span class="n">4.</span> Não Conformidades e Pontos de Atenção</h2>
+    <h2 class="s"><span class="n">6.</span> Não conformidades e pontos de atenção</h2>
     ${ncHtml}
 
-    <h2 class="s"><span class="n">5.</span> Conclusão e Recomendações</h2>
+    <h2 class="s"><span class="n">7.</span> Recomendações ao contratante</h2>
     ${conclusion}
     <p>Recomenda-se ao contratante:</p>
     <ul class="rec">
@@ -1938,7 +1950,7 @@ async function renderReport(){ if(noAud()){ var _e=document.getElementById('repo
       <li>Agendar nova auditoria de verificação após a execução do plano de ação.</li>
     </ul>
     ${obsExtra}
-    <div class="foot">Este relatório tem caráter técnico e não substitui a análise jurídica específica do caso concreto; recomenda-se sua discussão com o departamento jurídico e com os profissionais habilitados de cada área (engenharia de segurança, medicina do trabalho, contabilidade e departamento pessoal).</div>
+    <div class="foot">Este relatório tem caráter técnico e não substitui a análise jurídica específica do caso concreto; recomenda-se sua discussão com o departamento jurídico e com os profissionais habilitados de cada área (engenharia de segurança, medicina do trabalho, contabilidade e departamento pessoal). As conclusões estão limitadas ao período, aos locais e às evidências examinadas.</div>
     <div class="rep-credit">Sistema de auditoria desenvolvido por Evolue — Treinamento e Desenvolvimento</div>`;
 }
 
