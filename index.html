@@ -1303,7 +1303,8 @@ function save(){ var a=A(); if(a){ a.model=state.model; a.company=state.company;
 /* ---------- Gerenciador de auditorias ---------- */
 function auditName(a){ if(a.name&&a.name.trim()) return a.name.trim(); if(a.company&&a.company.razao&&a.company.razao.trim()) return a.company.razao.trim(); return 'Auditoria sem nome'; }
 function auditIndex(a){ const m=a.model, items=MODELS[m].items, ans=(a.models[m]||{}).answers||{}; let C=0,P=0,N=0; items.forEach(function(it){ var v=ans[it.n]; if(v==='C')C++; else if(v==='PC')P++; else if(v==='NC')N++; }); const den=C+P+N; return den? Math.round((C+0.5*P)/den*100) : null; }
-function auditPendingObs(a){ if(!a) return 0; const m=a.model, items=MODELS[m].items, d=(a.models[m]||{}), ans=d.answers||{}, ob=d.obs||{}; let c=0; items.forEach(function(it){ var v=ans[it.n]; if((v==='NC'||v==='PC') && !((ob[it.n]||'').trim())) c++; }); return c; }
+const OBS_OBRIGATORIA = false; /* trava: observacao obrigatoria em NC/Parcial. false = desligada. Mude para true para reativar. */
+function auditPendingObs(a){ if(!OBS_OBRIGATORIA || !a) return 0; const m=a.model, items=MODELS[m].items, d=(a.models[m]||{}), ans=d.answers||{}, ob=d.obs||{}; let c=0; items.forEach(function(it){ var v=ans[it.n]; if((v==='NC'||v==='PC') && !((ob[it.n]||'').trim())) c++; }); return c; }
 function bindAndRefresh(){ bindCurrent(); filterBlock='all'; save(); refreshAll(); renderModelSelector(); renderIdent(); renderAuditList(); hydrateThumbs(); }
 function openAudit(id){ if(!state.audits[id]) return; state.currentId=id; bindAndRefresh(); go('empresa'); showIdent(); toast('Auditoria aberta'); }
 function newAudit(){ var a=blankAudit(); state.audits[a.id]=a; state.currentId=a.id; bindAndRefresh(); go('empresa'); showIdent(); toast('Nova auditoria criada'); }
@@ -1556,7 +1557,7 @@ function paradigmaCard(){
 }
 function noAud(){ return !A(); }
 /* ---- Observação obrigatória para Não Conforme / Parcial ---- */
-function pendingObs(){ if(noAud())return[]; return ITEMS.filter(it=>(answers[it.n]==='NC'||answers[it.n]==='PC') && !(obs[it.n]||'').trim()); }
+function pendingObs(){ if(!OBS_OBRIGATORIA || noAud())return[]; return ITEMS.filter(it=>(answers[it.n]==='NC'||answers[it.n]==='PC') && !(obs[it.n]||'').trim()); }
 function renderBannerPending(){
   const el=document.getElementById('obs-banner'); if(!el) return;
   if(noAud()){ el.innerHTML=''; return; }
@@ -1645,7 +1646,7 @@ function renderAudit(){ if(noAud()){ var _e=document.getElementById('audit-list'
     if(_bn){ h+=`<div class="block-note"><div class="bn-head">${_bn.head}</div><details class="bn-more"><summary>Ver orientações da auditoria</summary><div class="bn-body">${_bn.body}</div></details></div>`; h+=paradigmaCard(); }
     ITEMS.filter(it=>it.b===bi).forEach(it=>{
       const a=answers[it.n];
-      const needObs=(a==='NC'||a==='PC'); const hasObs=(obs[it.n]||'').trim(); const obsMissing=needObs&&!hasObs;
+      const needObs=OBS_OBRIGATORIA && (a==='NC'||a==='PC'); const hasObs=(obs[it.n]||'').trim(); const obsMissing=needObs&&!hasObs;
       h+=`<div class="item ${a?('answered-'+a):''}${obsMissing?' item-pending':''}" data-n="${it.n}">
         <div class="item-top">
           <span class="num">${it.n}</span>
