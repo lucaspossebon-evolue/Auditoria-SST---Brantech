@@ -1828,7 +1828,7 @@ async function renderReport(){ if(noAud()){ var _e=document.getElementById('repo
   const evBlock=(n)=>{ const list=attach[n]||[]; if(!list.length) return ''; const inner=list.map(a=>{ const nm=(a.name||'documento').replace(/</g,'&lt;'); if((a.type||'').indexOf('image')===0 && evMap[a.id]) return `<img class="ev-img" src="${evMap[a.id]}" alt="${nm.replace(/"/g,'&quot;')}" onclick="openLightbox(this.src)">`; return `<span class="ev-file">${nm}</span>`; }).join(''); return `<div class="nc-ev"><div class="ev-h">Evidências anexadas (${list.length})</div><div class="ev-imgs">${inner}</div></div>`; };
 
   let blockRows='';
-  BLOCKS.forEach((bn,i)=>{ const pb=s.perBlock[i]; blockRows+=`<tr><td>${bn}</td><td class="c">${pb.total}</td><td class="c">${pb.C}</td><td class="c">${pb.NC}</td><td class="c">${pb.NA}</td><td class="c">${fmtPct(blockPct(pb))}</td></tr>`; });
+  BLOCKS.forEach((bn,i)=>{ const pb=s.perBlock[i]; blockRows+=`<tr><td>${bn}</td><td class="c">${pb.total}</td><td class="c">${pb.C}</td><td class="c">${pb.PC||0}</td><td class="c">${pb.NC}</td><td class="c">${pb.NA}</td><td class="c">${fmtPct(blockPct(pb))}</td></tr>`; });
 
   let ncHtml='';
   if(ncs.length===0){ ncHtml=`<p><em>Nenhuma não conformidade registrada até o momento — ou a auditoria de campo ainda não foi concluída. Ao marcar os itens do checklist, esta seção é preenchida automaticamente.</em></p>`; }
@@ -1941,7 +1941,7 @@ async function renderReport(){ if(noAud()){ var _e=document.getElementById('repo
 
     <h2 class="s"><span class="n">5.</span> Resultado por bloco</h2>
     <table class="t">
-      <tr><th>Bloco temático</th><th class="c">Total</th><th class="c">Conf.</th><th class="c">N.C.</th><th class="c">N/A</th><th class="c">% Conf.</th></tr>
+      <tr><th>Bloco temático</th><th class="c">Total</th><th class="c">Conf.</th><th class="c">Parcial</th><th class="c">N.C.</th><th class="c">N/A</th><th class="c">% Conf.</th></tr>
       ${blockRows}
     </table>
 
