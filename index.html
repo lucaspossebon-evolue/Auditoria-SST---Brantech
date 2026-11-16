@@ -1879,7 +1879,7 @@ async function renderReport(){ if(noAud()){ var _e=document.getElementById('repo
     ? `<p>Do total de ${s.total} ${plN(s.total,'requisito avaliado','requisitos avaliados')}, <b>${s.NC}</b> ${plN(s.NC,'foi classificado','foram classificados')} como ${plN(s.NC,'Não Conforme','Não Conformes')}, sendo <b>${s.pri.Alta}</b> de prioridade Alta, <b>${s.pri['Média']}</b> de prioridade Média e <b>${s.pri.Baixa}</b> de prioridade Baixa.${s.pri.Alta>0?` ${plN(s.pri.Alta,'A não conformidade de prioridade Alta representa o maior risco imediato e deve ser tratada','As não conformidades de prioridade Alta representam o maior risco imediato e devem ser tratadas')} como prioridade máxima no plano de ação.`:''}</p>`
     : `<p>Do total de ${s.total} ${plN(s.total,'item avaliado','itens avaliados')}, <b>${s.NC}</b> ${plN(s.NC,'foi classificado','foram classificados')} como ${plN(s.NC,'Não Conforme','Não Conformes')}, <b>${s.PC}</b> como ${plN(s.PC,'Parcialmente Conforme','Parcialmente Conformes')} e <b>${s.C}</b> como ${plN(s.C,'Conforme','Conformes')}${s.NA?`, além de ${s.NA} não ${plN(s.NA,'aplicável','aplicáveis')}`:''}.${s.PC>0?` ${plN(s.PC,'O item parcialmente conforme conta','Os itens parcialmente conformes contam')} com metade do peso no índice e, junto às não conformidades, ${plN(s.PC,'está associado','estão associados')} a uma recomendação específica na seção anterior, que deve orientar a priorização do plano de ação.`:''}</p>`;
 
-  let secN=8; let obsExtra='';
+  let secN=7; let obsExtra='';
   {
     const rowsp=paradigmas.filter(p=>(p.nome||'').trim()||(p.funcao||'').trim()||(p.obs||'').trim());
     if(rowsp.length){
@@ -1955,12 +1955,12 @@ async function renderReport(){ if(noAud()){ var _e=document.getElementById('repo
     <h2 class="s"><span class="n">6.</span> Não conformidades e pontos de atenção</h2>
     ${ncHtml}
 
-    <h2 class="s"><span class="n">7.</span> Considerações Finais</h2>
+    ${obsExtra}
+    <h2 class="s"><span class="n">${secN}.</span> Considerações Finais</h2>
     <p>O presente relatório consolida os achados da auditoria de segurança e saúde no trabalho, com o objetivo de subsidiar a tomada de decisões, o tratamento das pendências identificadas e a melhoria contínua das condições de trabalho. As conclusões estão limitadas ao período, aos locais, às atividades e às evidências examinadas, considerando o escopo e os procedimentos adotados.</p>
     <p>Este relatório tem caráter técnico e não substitui a análise jurídica individualizada. Recomenda-se sua discussão com os responsáveis pelo departamento jurídico e com os profissionais habilitados ou responsáveis pelas áreas pertinentes, incluindo o SESMT (se houver), medicina do trabalho, contabilidade e departamento pessoal, conforme a natureza de cada apontamento.</p>
     <p>Recomenda-se que os responsáveis pelas áreas envolvidas, em conjunto com o responsável legal pela empresa, elaborem e aprovem um plano de ação para o tratamento das pendências. O plano deverá estabelecer, para cada item, as medidas a serem adotadas, o responsável pela execução, o prazo compatível com a gravidade do risco e as condições de exposição, os recursos necessários, os controles provisórios aplicáveis, as evidências de execução e os critérios de verificação da eficácia.</p>
     <p>Por fim, recomenda-se o acompanhamento periódico do plano de ação, com registro das providências adotadas e avaliação de seus resultados. O encerramento de cada pendência deverá considerar tanto a comprovação da execução das medidas quanto a verificação de sua eficácia, promovendo a continuidade das ações de prevenção e a proteção da segurança e da saúde dos trabalhadores.</p>
-    ${obsExtra}
     <div class="rep-credit">Sistema de auditoria desenvolvido por Evolue — Treinamento e Desenvolvimento</div>`;
 }
 
