@@ -1482,7 +1482,7 @@ function band(idx){
 function fmtPct(v){ return v===null?'—':(Math.round(v*10)/10).toString().replace('.',',')+'%'; }
 function plN(n,sing,plur){ return Number(n)===1?sing:plur; }
 /* Cores dos gráficos do relatório (paleta sóbria Brantech) */
-var CH_C='#3C7A5E', CH_PC='#C2A25C', CH_NC='#B06F66', CH_NA='#AEB7B1';
+var CH_C='#1FA97F', CH_PC='#E0A82E', CH_NC='#D4504E', CH_NA='#9AA8A1';
 function chBand(p){ return p==null?CH_NA:(p>=80?CH_C:(p>=50?CH_PC:CH_NC)); }
 /* Seção 4 — rosca de indicadores com índice no centro */
 function donutSVG(s){
@@ -2028,7 +2028,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v62 · 18/11/2026';
+const APP_VERSION = 'v63 · 18/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
