@@ -1657,8 +1657,10 @@ function gerarPDF(){
     scrollToItem(p[0].n);
     return;
   }
-  if(iosStandalone()||inAppBrowser()){ gerarPdfApp(); return; }
-  try{ window.print(); }catch(e){ gerarPdfApp(); }
+  // Gerador controlado (jsPDF/html2canvas) em TODOS os dispositivos: mesmo resultado em qualquer
+  // lugar, sem o cabeçalho/rodapé (data, URL, nº de página) que o navegador adiciona ao imprimir.
+  if(window.jspdf&&window.jspdf.jsPDF&&typeof window.html2canvas==='function'){ gerarPdfApp(); return; }
+  try{ window.print(); }catch(e){ gerarPdfApp(); } // fallback só se as bibliotecas não carregaram
 }
 /* ===== Geração de PDF dentro do app (offline) — iPhone instalado / navegador in-app ===== */
 function iosStandalone(){ try{ var ios=/iPad|iPhone|iPod/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1); var sa=(navigator.standalone===true)||(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches); return ios&&sa; }catch(e){ return false; } }
@@ -2061,7 +2063,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v72 · 23/11/2026';
+const APP_VERSION = 'v73 · 23/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
