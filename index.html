@@ -328,6 +328,9 @@ body{
 .doc .chart5 .bp{text-align:right; font-weight:600; color:#0C3B2E; font-variant-numeric:tabular-nums}
 .doc .chart5 .bax{display:grid; grid-template-columns:150px 1fr 44px; gap:9px; margin-top:3px}
 .doc .chart5 .bax .ticks{display:flex; justify-content:space-between; font-size:9px; color:#93A099}
+.doc .chart5 .bleg{display:flex; flex-wrap:wrap; gap:16px; margin-top:12px; font-size:10.5px; color:#5a6b63}
+.doc .chart5 .bleg span{display:inline-flex; align-items:center}
+.doc .chart5 .bleg i{width:10px; height:10px; border-radius:2px; display:inline-block; margin-right:6px}
 .nc-block-title{font-family:var(--disp); font-weight:700; font-size:12px; color:var(--brand-ink); margin:20px 0 9px}
 .nc{border:1px solid var(--line); border-left:3px solid var(--no); border-radius:7px; padding:13px 14px; margin-bottom:12px; background:#fff}
 .nc .nc-h{display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:8px}
@@ -450,13 +453,20 @@ body{
 .aud-new{width:100%; border:1.5px dashed var(--brand-2); background:var(--surface-2); color:var(--brand-2); font-weight:700; font-size:13px; padding:10px; border-radius:10px; cursor:pointer; margin-top:2px}
 
 /* ---------- Print ---------- */
+@page{ margin:0 } /* remove cabeçalho (data/título) e rodapé (URL/página) adicionados pelo navegador */
 @media print{
   body{background:#fff}
+  /* força a impressão das cores de fundo (barras dos gráficos, pontos da legenda, cabeçalhos das tabelas) */
+  body,.doc,.doc *{ -webkit-print-color-adjust:exact !important; print-color-adjust:exact !important }
+  /* não quebrar os gráficos no meio da página */
+  .doc .chart4{ break-inside:avoid; page-break-inside:avoid }
+  .doc .chart5 .bb{ break-inside:avoid; page-break-inside:avoid }
+  .doc .chart5 .bleg{ break-inside:avoid; page-break-inside:avoid }
   .appbar,.topbar,.subbar,.nav,.rep-toolbar,.rep-note,.toast,.lightbox{display:none !important}
   .app{max-width:100%; padding:0}
   .screen{display:none !important; padding:0}
   #scr-relatorio{display:block !important}
-  .doc{border:none; box-shadow:none; border-radius:0; padding:0; font-size:11pt}
+  .doc{border:none; box-shadow:none; border-radius:0; padding:14mm 12mm; font-size:11pt}
   .nc,.doc table.t{page-break-inside:avoid}
   /* No PDF: fotos em tamanho médio (legíveis se impressas), várias por linha */
   .nc-ev{page-break-inside:auto}
@@ -1509,7 +1519,8 @@ function blockBarsSVG(s){
   BLOCKS.forEach(function(bn,i){ var pb=s.perBlock[i], p=blockPct(pb), w=(p==null?0:p);
     rows+='<div class="bb"><div class="bn">'+bn+'</div><div class="bt"><div class="bf" style="width:'+w+'%;background:'+chBand(p)+'"></div></div><div class="bp">'+fmtPct(p)+'</div></div>';
   });
-  return '<div class="chart5">'+rows+'<div class="bax"><div></div><div class="ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div><div></div></div></div>';
+  return '<div class="chart5">'+rows+'<div class="bax"><div></div><div class="ticks"><span>0</span><span>25</span><span>50</span><span>75</span><span>100%</span></div><div></div></div>'+
+    '<div class="bleg"><span><i style="background:'+CH_C+'"></i>Conformidade alta (≥ 80%)</span><span><i style="background:'+CH_PC+'"></i>Conformidade parcial (50–79%)</span><span><i style="background:'+CH_NC+'"></i>Conformidade baixa (&lt; 50%)</span></div></div>';
 }
 
 /* ============================================================
@@ -2028,7 +2039,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v67 · 23/11/2026';
+const APP_VERSION = 'v69 · 23/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
