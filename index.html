@@ -453,6 +453,9 @@ body{
 .aud-new{width:100%; border:1.5px dashed var(--brand-2); background:var(--surface-2); color:var(--brand-2); font-weight:700; font-size:13px; padding:10px; border-radius:10px; cursor:pointer; margin-top:2px}
 
 /* ---------- Print ---------- */
+/* Durante a geração do PDF no app (html2canvas), captura o relatório em largura de documento
+   (~A4 útil) em vez da largura do celular, para o texto não sair ampliado. */
+body.pdf-export .app{ max-width:718px !important }
 @page{ margin:0 } /* remove cabeçalho (data/título) e rodapé (URL/página) adicionados pelo navegador */
 @media print{
   body{background:#fff}
@@ -1664,14 +1667,16 @@ function showPdfLoading(on){ var o=document.getElementById('pdf-loading'); if(on
 async function gerarPdfApp(){
   if(!(window.jspdf&&window.jspdf.jsPDF)||typeof window.html2canvas!=='function'){ alert('O gerador de PDF não carregou. Recarregue o app (com internet) e tente novamente.'); return; }
   showPdfLoading(true);
+  document.body.classList.add('pdf-export'); // captura em largura de documento (evita texto ampliado)
   try{
     await renderReport();
-    await new Promise(function(r){ setTimeout(r,180); });
+    await new Promise(function(r){ setTimeout(r,220); });
     var node=document.getElementById('report');
-    if(!node){ showPdfLoading(false); return; }
-    var canvas=await window.html2canvas(node,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,scrollX:0,scrollY:-window.scrollY,windowWidth:node.scrollWidth});
+    if(!node){ document.body.classList.remove('pdf-export'); showPdfLoading(false); return; }
+    var canvas=await window.html2canvas(node,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,scrollX:0,scrollY:-window.scrollY,windowWidth:760});
+    document.body.classList.remove('pdf-export');
     var jsPDF=window.jspdf.jsPDF; var pdf=new jsPDF({unit:'mm',format:'a4',compress:true});
-    var pw=210, ph=297, mg=8, imgW=pw-mg*2;
+    var pw=210, ph=297, mg=10, imgW=pw-mg*2;
     var pxPerMm=canvas.width/imgW;
     var pageHpx=Math.floor((ph-mg*2)*pxPerMm);
     var y=0, page=0;
@@ -1694,7 +1699,7 @@ async function gerarPdfApp(){
       try{ await navigator.share({files:[file],title:'Relatório de Auditoria SST'}); return; }catch(e){ if(e&&e.name==='AbortError') return; }
     }
     var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); setTimeout(function(){ try{URL.revokeObjectURL(url);a.remove();}catch(e){} },5000);
-  }catch(e){ showPdfLoading(false); alert('Não foi possível gerar o PDF: '+((e&&e.message)||e)); }
+  }catch(e){ document.body.classList.remove('pdf-export'); showPdfLoading(false); alert('Não foi possível gerar o PDF: '+((e&&e.message)||e)); }
 }
 var EMPTY_STATE='<div class="empty-state">Nenhuma auditoria aberta.<br>Toque em <b>+ Nova auditoria</b> na aba <b>Empresa</b> para começar.</div>';
 function renderAudit(){ if(noAud()){ var _e=document.getElementById('audit-list'); if(_e)_e.innerHTML=EMPTY_STATE; var _pc=document.getElementById('prog-count'); if(_pc)_pc.textContent='—'; var _pi=document.getElementById('prog-idx'); if(_pi)_pi.textContent=''; var _pb=document.getElementById('prog-bar'); if(_pb)_pb.innerHTML=''; return; }
@@ -2039,7 +2044,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v70 · 23/11/2026';
+const APP_VERSION = 'v71 · 23/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
