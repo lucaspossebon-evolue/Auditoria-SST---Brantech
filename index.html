@@ -398,6 +398,16 @@ body{
 #pdf-loading .pl-spin{width:34px;height:34px;border:3px solid var(--line);border-top-color:var(--brand);border-radius:50%;animation:plspin .8s linear infinite}
 #pdf-loading .pl-txt{font-size:13.5px;font-weight:600;color:var(--text)}
 @keyframes plspin{to{transform:rotate(360deg)}}
+/* Pré-visualização do PDF antes de salvar/compartilhar */
+#pdf-preview{position:fixed; inset:0; z-index:10000; display:none; flex-direction:column; background:rgba(10,20,16,.80)}
+#pdf-preview.on{display:flex}
+#pdf-preview .pv-head{flex:0 0 auto; display:flex; align-items:center; justify-content:space-between; gap:10px; padding:13px 16px; background:var(--brand); color:#fff}
+#pdf-preview .pv-head .t{font-weight:700; font-size:15px}
+#pdf-preview .pv-head .x{background:transparent; border:none; color:#fff; font-size:22px; line-height:1; cursor:pointer; padding:4px 8px; border-radius:8px}
+#pdf-preview .pv-body{flex:1 1 auto; overflow:auto; -webkit-overflow-scrolling:touch; padding:14px; display:flex; justify-content:center; align-items:flex-start}
+#pdf-preview .pv-body img{width:100%; max-width:820px; height:auto; background:#fff; box-shadow:0 8px 28px rgba(0,0,0,.35); border-radius:4px}
+#pdf-preview .pv-foot{flex:0 0 auto; display:flex; gap:10px; padding:12px 16px calc(12px + env(safe-area-inset-bottom)); background:var(--surface); border-top:1px solid var(--line)}
+#pdf-preview .pv-foot .btn{flex:1}
 .detail .dtl-sec{margin:0 0 9px} .detail .dtl-sec:last-child{margin-bottom:0}
 .detail .dtl-sec>div{white-space:pre-line}
 .detail .dtl-k{display:block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--brand-2);margin-bottom:3px}
@@ -1735,15 +1745,41 @@ async function gerarPdfApp(opts){
     var c=state.company||{}; var dt=c.data?('_'+c.data.split('-').reverse().join('-')):'';
     var fname=prefix+'_'+(sanitizeName(c.razao)||'relatorio')+dt+'.pdf';
     var blob=pdf.output('blob');
+    // Imagem de pré-visualização (fiel ao conteúdo do PDF), reduzida para exibição
+    var pvW=Math.min(canvas.width, 900), pvH=Math.round(canvas.height*(pvW/canvas.width));
+    var pc=document.createElement('canvas'); pc.width=pvW; pc.height=pvH;
+    var pctx=pc.getContext('2d'); pctx.fillStyle='#ffffff'; pctx.fillRect(0,0,pvW,pvH); pctx.drawImage(canvas,0,0,pvW,pvH);
+    var imgUrl=pc.toDataURL('image/jpeg',0.72);
     showPdfLoading(false);
-    var file=null; try{ file=new File([blob],fname,{type:'application/pdf'}); }catch(e){}
-    var isTouch=((navigator.maxTouchPoints||0)>0)||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
-    // No computador: baixa (salva) o PDF direto. No celular: abre o menu Compartilhar (que inclui "Salvar em Arquivos").
-    if(isTouch && file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
-      try{ await navigator.share({files:[file],title:shareTitle}); return; }catch(e){ if(e&&e.name==='AbortError') return; }
-    }
-    var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); setTimeout(function(){ try{URL.revokeObjectURL(url);a.remove();}catch(e){} },5000);
+    showPdfPreview({ imgUrl:imgUrl, blob:blob, fname:fname, shareTitle:shareTitle });
   }catch(e){ document.body.classList.remove('pdf-export'); if(_wasHidden&&_n0) _n0.style.display='none'; showPdfLoading(false); alert('Não foi possível gerar o PDF: '+((e&&e.message)||e)); }
+}
+function deliverPdf(blob, fname, shareTitle){
+  var isTouch=((navigator.maxTouchPoints||0)>0)||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
+  var file=null; try{ file=new File([blob],fname,{type:'application/pdf'}); }catch(e){}
+  // No celular: abre o menu Compartilhar (inclui "Salvar em Arquivos"). No computador: baixa direto.
+  if(isTouch && file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+    return navigator.share({files:[file],title:shareTitle}).then(function(){return true;}).catch(function(e){ if(e&&e.name==='AbortError') return false; throw e; });
+  }
+  var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); setTimeout(function(){ try{URL.revokeObjectURL(url);a.remove();}catch(e){} },5000);
+  return Promise.resolve(true);
+}
+function showPdfPreview(opts){
+  var ov=document.getElementById('pdf-preview');
+  if(!ov){
+    ov=document.createElement('div'); ov.id='pdf-preview';
+    ov.innerHTML='<div class="pv-head"><span class="t">Pré-visualização</span><button class="x" aria-label="Fechar">✕</button></div><div class="pv-body"><img alt="Pré-visualização do documento"></div><div class="pv-foot"><button class="btn btn-ghost pv-close">Fechar</button><button class="btn btn-primary pv-save"></button></div>';
+    document.body.appendChild(ov);
+  }
+  var img=ov.querySelector('.pv-body img'); img.src=opts.imgUrl;
+  ov.querySelector('.pv-body').scrollTop=0;
+  var isTouch=((navigator.maxTouchPoints||0)>0)||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
+  var saveBtn=ov.querySelector('.pv-save'); saveBtn.textContent = isTouch ? 'Salvar / Compartilhar' : 'Baixar PDF'; saveBtn.disabled=false;
+  function close(){ ov.classList.remove('on'); img.src=''; }
+  ov.querySelector('.x').onclick=close;
+  ov.querySelector('.pv-close').onclick=close;
+  saveBtn.onclick=function(){ saveBtn.disabled=true; deliverPdf(opts.blob,opts.fname,opts.shareTitle).then(function(ok){ saveBtn.disabled=false; if(ok) close(); }).catch(function(){ saveBtn.disabled=false; alert('Não foi possível salvar/compartilhar o PDF.'); }); };
+  ov.classList.add('on');
 }
 var EMPTY_STATE='<div class="empty-state">Nenhuma auditoria aberta.<br>Toque em <b>+ Nova auditoria</b> na aba <b>Empresa</b> para começar.</div>';
 function renderAudit(){ if(noAud()){ var _e=document.getElementById('audit-list'); if(_e)_e.innerHTML=EMPTY_STATE; var _pc=document.getElementById('prog-count'); if(_pc)_pc.textContent='—'; var _pi=document.getElementById('prog-idx'); if(_pi)_pi.textContent=''; var _pb=document.getElementById('prog-bar'); if(_pb)_pb.innerHTML=''; return; }
@@ -2143,7 +2179,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v75 · 24/11/2026';
+const APP_VERSION = 'v76 · 24/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
