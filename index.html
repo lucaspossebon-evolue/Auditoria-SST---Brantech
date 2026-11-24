@@ -350,6 +350,8 @@ body{
 .nc .nc-id{font-family:var(--disp); font-weight:700; font-size:11.5px; color:var(--brand-ink)}
 .nc .pbadge{font-size:9px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:5px; color:#fff; flex:0 0 auto}
 .pbadge.alta{background:var(--alta)} .pbadge.media{background:var(--media)} .pbadge.baixa{background:var(--baixa)} .pbadge.pc{background:var(--pc)}
+.pbadge.b-c{background:var(--ok)} .pbadge.b-pc{background:var(--pc)} .pbadge.b-nc{background:var(--no)}
+.nc.st-c{border-left-color:var(--ok)} .nc.st-pc{border-left-color:var(--pc)} .nc.st-nc{border-left-color:var(--no)}
 .nc dl{margin:0; font-size:11.4px}
 .nc dl .row{margin:6px 0; line-height:1.5}
 .nc dl .row.rp-sub{margin:2px 0 2px 14px}
@@ -2034,30 +2036,32 @@ async function renderReport(){ if(noAud()){ var _e=document.getElementById('repo
   BLOCKS.forEach((bn,i)=>{ const pb=s.perBlock[i]; blockRows+=`<tr><td>${bn}</td><td class="c">${pb.total}</td><td class="c">${pb.C}</td><td class="c">${pb.PC||0}</td><td class="c">${pb.NC}</td><td class="c">${pb.NA}</td><td class="c">${fmtPct(blockPct(pb))}</td></tr>`; });
 
   let ncHtml='';
-  if(ncs.length===0){ ncHtml=`<p><em>Nenhuma não conformidade registrada até o momento — ou a auditoria de campo ainda não foi concluída. Ao marcar os itens do checklist, esta seção é preenchida automaticamente.</em></p>`; }
+  const detItems=ITEMS.filter(it=>answers[it.n]==='C'||answers[it.n]==='PC'||answers[it.n]==='NC');
+  if(detItems.length===0){ ncHtml=`<p><em>Nenhum item avaliado até o momento — ou a auditoria de campo ainda não foi concluída. Ao marcar os itens do checklist (Conforme, Parcialmente Conforme ou Não Conforme), esta seção é preenchida automaticamente.</em></p>`; }
   else {
+    const stMap={C:{lab:'Conforme',b:'b-c',s:'st-c'},PC:{lab:'Parcialmente conforme',b:'b-pc',s:'st-pc'},NC:{lab:'Não conforme',b:'b-nc',s:'st-nc'}};
+    let seq=0;
     BLOCKS.forEach((bn,i)=>{
-      const inBlock=ncs.filter(it=>it.b===i); if(!inBlock.length) return;
+      const inBlock=detItems.filter(it=>it.b===i); if(!inBlock.length) return;
       ncHtml+=`<div class="nc-block-title">${bn}</div>`;
       inBlock.forEach(it=>{
-        const isPC=answers[it.n]==='PC';
-        const badge = isPC?`<span class="pbadge pc">Parcialmente conforme</span>`:(hasPri?`<span class="pbadge ${pcls[it.pri]}">Prioridade ${it.pri}</span>`:'');
-        const idLine = it.nr?`Item ${it.n} — ${it.nr}`:`Item ${it.n}`;
+        seq++;
+        const ans=answers[it.n]; const st=stMap[ans]; const isNCPC=(ans==='NC'||ans==='PC');
         let rows='';
-        rows+=`<div class="row"><span class="lab">${isPC?'Constatação (parcial):':(it.risco?'Constatação / requisito:':'Requisito não atendido:')}</span> ${it.req}</div>`;
-        if(it.doc) rows+=`<div class="row"><span class="lab">Documento esperado:</span> ${it.doc}</div>`;
-        if(it.org) rows+=`<div class="row"><span class="lab">Pode ser exigido por:</span> ${it.org}</div>`;
-        if(it.risco){
-          rows+=`<div class="row"><span class="lab">Risco potencial:</span></div>`;
-          it.risco.split('\n').forEach(function(ln){
-            var mt=ln.match(/^(RISCO|BASE LEGAL|PENALIDADE):\s*([\s\S]*)$/i);
-            if(mt){ var lk=mt[1].toUpperCase(); var lab=lk==='RISCO'?'Risco':(lk==='BASE LEGAL'?'Base legal':'Penalidade'); rows+='<div class="row rp-sub"><span class="lab">'+lab+':</span> '+mt[2]+'</div>'; }
-            else if(ln.trim()){ rows+='<div class="row rp-sub">'+ln+'</div>'; }
-          });
+        rows+=`<div class="row"><span class="lab">Pergunta Auditada:</span> ${it.req}</div>`;
+        if(isNCPC){
+          if(it.doc) rows+=`<div class="row"><span class="lab">Documento esperado:</span> ${it.doc}</div>`;
+          if(it.org) rows+=`<div class="row"><span class="lab">Pode ser exigido por:</span> ${it.org}</div>`;
+          if(it.risco){
+            it.risco.split('\n').forEach(function(ln){
+              var mt=ln.match(/^(RISCO|BASE LEGAL|PENALIDADE):\s*([\s\S]*)$/i);
+              if(mt){ var lk=mt[1].toUpperCase(); var lab=lk==='RISCO'?'Risco Potencial':(lk==='BASE LEGAL'?'Base legal / Requisitos Normativos':'Penalidade'); rows+='<div class="row rp-sub"><span class="lab">'+lab+':</span> '+mt[2]+'</div>'; }
+              else if(ln.trim()){ rows+='<div class="row rp-sub">'+ln+'</div>'; }
+            });
+          }
         }
-        rows+=`<div class="row"><span class="lab">${it.risco?'Recomendação:':'Ação corretiva recomendada:'}</span> ${it.acao}</div>`;
-        const _ob=(obs[it.n]||'').trim(); if(_ob) rows+=`<div class="row row-obs"><span class="lab">Observação do técnico:</span> ${_ob.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>`;
-        ncHtml+=`<div class="nc"><div class="nc-h"><span class="nc-id">${idLine}</span>${badge}</div><dl>${rows}</dl>${isCipa(it)?cipaTableFor(state.company):''}${(isCipa(it)||isSesmt(it))?sesmtTableFor(state.company):''}${evBlock(it.n)}</div>`;
+        const _ob=(obs[it.n]||'').trim(); if(_ob) rows+=`<div class="row row-obs"><span class="lab">Constatação e Evidência:</span> ${_ob.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>`;
+        ncHtml+=`<div class="nc ${st.s}"><div class="nc-h"><span class="nc-id">Item ${seq}</span><span class="pbadge ${st.b}">${st.lab}</span></div><dl>${rows}</dl>${isNCPC&&isCipa(it)?cipaTableFor(state.company):''}${isNCPC&&(isCipa(it)||isSesmt(it))?sesmtTableFor(state.company):''}${evBlock(it.n)}</div>`;
       });
     });
   }
@@ -2084,13 +2088,8 @@ async function renderReport(){ if(noAud()){ var _e=document.getElementById('repo
       obsExtra+=`<h2 class="s"><span class="n">${secN}.</span> Funcionários paradigma (amostragem)</h2><p>Amostra de trabalhadores selecionada para conferência documental e de ficha de EPI:</p><table class="t"><tr><th>Nome</th><th>Função</th><th>Observação</th></tr>${tr}</table>`; secN++;
     }
   }
-  {
-    const rowsx=ITEMS.filter(it=>answers[it.n]!=='NC' && answers[it.n]!=='PC' && (obs[it.n]||'').trim());
-    if(rowsx.length){
-      const li=rowsx.map(it=>{ const st=answers[it.n]==='C'?'Conforme':(answers[it.n]==='NA'?'N/A':'Não avaliado'); const ob=(obs[it.n]||'').trim().replace(/&/g,'&amp;').replace(/</g,'&lt;'); return `<div class="nc" style="border-left-color:var(--brand-2)"><div class="nc-h"><span class="nc-id">Item ${it.n} — ${st}</span></div><dl><div class="row"><span class="lab">Item:</span> ${it.req}</div><div class="row row-obs"><span class="lab">Observação do técnico:</span> ${ob}</div></dl></div>`; }).join('');
-      obsExtra+=`<h2 class="s"><span class="n">${secN}.</span> Observações registradas em campo</h2><p>Registros feitos pelo técnico durante a auditoria em itens não classificados como não conformes:</p>${li}`; secN++;
-    }
-  }
+  /* Seção "Observações registradas em campo" removida: as conformidades já aparecem
+     com "Constatação e Evidência" na seção de resultado por item; o N/A não entra no relatório. */
   {
     const gObs=(obs['G']||'').trim(); const gPhotos=attach['G']||[];
     if(gObs || gPhotos.length){
@@ -2102,7 +2101,7 @@ async function renderReport(){ if(noAud()){ var _e=document.getElementById('repo
   const consolidacao = new Date().toLocaleDateString('pt-BR');
   const apresentacao = `<p>Este relatório apresenta o resultado da auditoria de Segurança e Saúde no Trabalho realizada na empresa com a finalidade de avaliar as condições de prevenção e a gestão de SST da empresa, identificar possíveis inadequações técnicas e legais e fornecer à direção informações para a definição de prioridades e medidas de melhoria.</p><p>O trabalho buscou verificar a correspondência entre as atividades desenvolvidas, os riscos ocupacionais identificados e as medidas de proteção adotadas, considerando os requisitos trabalhistas e previdenciários aplicáveis. A avaliação contemplou tanto a documentação quanto as condições operacionais registradas durante a auditoria, reconhecendo que a prevenção depende da implementação efetiva das medidas e de sua manutenção na rotina de trabalho.</p>`;
   const metodUtil = `<p>A avaliação foi conduzida por meio de roteiro estruturado em temas, com perguntas relacionadas aos processos, equipamentos, exposições ocupacionais e obrigações aplicáveis à empresa. A abrangência das verificações e as evidências examinadas estão identificadas nos resultados deste relatório.</p><p>A metodologia combinou a análise dos documentos disponibilizados com os registros de inspeção dos ambientes, as observações das atividades e as informações obtidas durante a auditoria. O cruzamento dessas evidências permitiu examinar a compatibilidade entre os registros formais e as condições de trabalho, respeitados os limites de acesso e da amostragem.</p><p>Para cada item foi avaliada a conformidade (Conforme, Não Conforme, Parcial ou Não Aplicável) e, para cada não conformidade ou Parcial, foram registrados o risco potencial associado e a recomendação de regularização, que compõem o plano de ação.</p>`;
-  const apresResultados = `<p>A fundamentação dos resultados considerou as Normas Regulamentadoras e os demais requisitos aplicáveis à situação examinada. Foram diferenciadas as obrigações legais das recomendações de melhoria, bem como as exigências gerais daquelas condicionadas à existência de determinada atividade, equipamento ou exposição.</p><p>${nivelSentence}</p><p>As conclusões estão limitadas ao período, aos locais e às evidências examinadas.</p><p>As recomendações foram formuladas para apoiar a correção das causas dos desvios e o aprimoramento da prevenção. Sua prioridade considera a gravidade das possíveis consequências, a exposição dos trabalhadores e os controles existentes. Assim, condições com potencial de lesão grave recebem atenção prioritária, independentemente da quantidade de pendências documentais.</p><p>Os resultados abaixo apresentados foram organizados por item avaliado, permitindo ao empregador identificar o requisito examinado, as evidências disponíveis, a conclusão da avaliação e a recomendação correspondente.</p>`;
+  const apresResultados = `<p>A fundamentação dos resultados considerou as Normas Regulamentadoras e os demais requisitos aplicáveis à situação examinada. Foram diferenciadas as obrigações legais das recomendações de melhoria, bem como as exigências gerais daquelas condicionadas à existência de determinada atividade, equipamento ou exposição.</p><p>${nivelSentence}</p><p>As conclusões estão limitadas ao período, aos locais e às evidências examinadas.</p><p>As recomendações foram formuladas para apoiar a correção das causas dos desvios e o aprimoramento da prevenção. Sua prioridade considera a gravidade das possíveis consequências, a exposição dos trabalhadores e os controles existentes. Assim, condições com potencial de lesão grave recebem atenção prioritária, independentemente da quantidade de pendências documentais.</p><p>Os resultados abaixo apresentados foram organizados por item avaliado, permitindo ao empregador identificar a pergunta auditada, a conclusão da avaliação e as evidências registradas. As ações recomendadas para a regularização das pendências são apresentadas no Plano de Ação, documento complementar a este relatório.</p>`;
   document.getElementById('report').innerHTML=`
     <div class="rep-hdr">
       <img class="brand-logo rep-logo" src="${LOGO}" alt="Brantech — Engenharia de Segurança do Trabalho">
@@ -2151,7 +2150,7 @@ async function renderReport(){ if(noAud()){ var _e=document.getElementById('repo
       ${blockRows}
     </table>
 
-    <h2 class="s"><span class="n">6.</span> Não conformidades e pontos de atenção</h2>
+    <h2 class="s"><span class="n">6.</span> Resultado por item auditado</h2>
     ${ncHtml}
 
     ${obsExtra}
@@ -2179,7 +2178,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v76 · 24/11/2026';
+const APP_VERSION = 'v77 · 24/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
