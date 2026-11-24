@@ -348,7 +348,7 @@ body{
 .nc{border:1px solid var(--line); border-left:3px solid var(--no); border-radius:7px; padding:13px 14px; margin-bottom:12px; background:#fff}
 .nc .nc-h{display:flex; justify-content:space-between; align-items:baseline; gap:8px; margin-bottom:8px}
 .nc .nc-id{font-family:var(--disp); font-weight:700; font-size:11.5px; color:var(--brand-ink)}
-.nc .pbadge{font-size:9px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:5px; color:#fff; flex:0 0 auto}
+.nc .pbadge, .doc .pa-h .pbadge{font-size:9px; font-weight:700; letter-spacing:.05em; text-transform:uppercase; padding:2px 7px; border-radius:5px; color:#fff; flex:0 0 auto}
 .pbadge.alta{background:var(--alta)} .pbadge.media{background:var(--media)} .pbadge.baixa{background:var(--baixa)} .pbadge.pc{background:var(--pc)}
 .pbadge.b-c{background:var(--ok)} .pbadge.b-pc{background:var(--pc)} .pbadge.b-nc{background:var(--no)}
 .nc.st-c{border-left-color:var(--ok)} .nc.st-pc{border-left-color:var(--pc)} .nc.st-nc{border-left-color:var(--no)}
@@ -1977,11 +1977,13 @@ function renderPlanReport(){
   else {
     ncs.forEach((it,idx)=>{
       const pl=plan[it.n]||{};
-      const isPC=answers[it.n]==='PC';
+      const ans=answers[it.n];
+      const pbLab = ans==='NC'?'Não conforme':'Parcialmente conforme';
+      const pbCls = ans==='NC'?'b-nc':'b-pc';
       const grupo=(MODELS[state.model].blocks[it.b]||'').replace(/^\d+\.\s*/,'');
       const rec=(pl.rec!=null?pl.rec:(it.acao||'')).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br/>');
       itensHtml+=`<div class="pa-item">
-        <div class="pa-h"><span class="pa-n">${idx+1}</span><span class="pa-g">${grupo}</span>${isPC?'<span class="pbadge pc">Parcialmente conforme</span>':''}</div>
+        <div class="pa-h"><span class="pa-n">${idx+1}</span><span class="pa-g">${grupo}</span><span class="pbadge ${pbCls}" style="margin-left:auto">${pbLab}</span></div>
         <div class="pa-q">${it.req}</div>
         <div class="pa-r"><span class="lab">Ação Corretiva:</span> ${rec||'<em>A definir pelo técnico.</em>'}</div>
         ${isCipa(it)?cipaTableFor(c):''}${(isCipa(it)||isSesmt(it))?sesmtTableFor(c):''}
@@ -2184,7 +2186,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v81 · 24/11/2026';
+const APP_VERSION = 'v82 · 24/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
