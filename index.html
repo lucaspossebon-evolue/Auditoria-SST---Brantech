@@ -249,9 +249,8 @@ body{
 .pl-dica{padding-left:0 !important; margin:4px 0 12px}
 .pl-dica .pl-dica-ph{font-style:italic; color:var(--faint)}
 .pl-rref{font-size:10.5px; color:var(--faint); font-weight:600; margin:-2px 0 7px}
-.pl-ctx{padding-left:0 !important; margin:0 0 12px}
-.pl-ctx .pl-ctx-row{margin:0 0 10px} .pl-ctx .pl-ctx-row:last-child{margin-bottom:0}
-.pl-ctx .dtl-k{display:block; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--brand-2); margin-bottom:4px}
+.pl-dica .pl-ctx-row{margin:11px 0 0; padding-top:10px; border-top:1px solid var(--line)}
+.pl-dica .pl-ctx-row .dtl-k{display:block; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--brand-2); margin-bottom:4px}
 .pl-reclab{display:block; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:2px 0 5px}
 .pl-rec{width:100%; border:1px solid var(--line); border-radius:var(--r-sm); padding:10px 11px; font-family:var(--body); font-size:12.5px; line-height:1.5; color:var(--text); background:var(--surface); resize:vertical; min-height:70px; box-sizing:border-box; overflow:hidden}
 .pl-rec:focus{outline:none; border-color:var(--brand-2)}
@@ -1959,13 +1958,12 @@ function renderPlano(){ if(noAud()){ var _e=document.getElementById('plan-list')
     const repN = repMap[it.n];
     const _ob=(obs[it.n]||'').trim();
     const _at=attachChipsRO(it.n);
-    const ctx = (_ob||_at) ? `<details class="detail pl-ctx"><summary><span class="caret">▶</span> Contexto da auditoria</summary><div class="body">${_ob?`<div class="pl-ctx-row"><span class="dtl-k">Constatação e Evidência</span><div>${_ob.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div></div>`:''}${_at?`<div class="pl-ctx-row"><span class="dtl-k">Anexos da auditoria</span>${_at}</div>`:''}</div></details>` : '';
+    const ctxInner = `${_ob?`<div class="pl-ctx-row"><span class="dtl-k">Constatação e Evidência (auditoria)</span><div>${_ob.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div></div>`:''}${_at?`<div class="pl-ctx-row"><span class="dtl-k">Anexos da auditoria</span>${_at}</div>`:''}`;
     h+=`<div class="pl-item ${cls}">
       <div class="pl-top"><span class="pl-num">${idx+1}</span>${pcTag}${prioTag}<span class="pl-nr" style="margin-left:auto">${grupo}</span></div>
       ${repN?`<div class="pl-rref">Item ${repN} no relatório</div>`:''}
       <p class="pl-req">${it.req}</p>
-      <details class="detail pl-dica"><summary><span class="caret">▶</span> Dica para o técnico</summary><div class="body"><div class="dtl-dica"><span class="dtl-k">Dica para o técnico · base legal detalhada</span><div>${it.dicaPlano ? it.dicaPlano : '<span class="pl-dica-ph">Conteúdo em preparação — a orientação e a base legal detalhada serão adicionadas em breve para auxiliar no preenchimento da ação corretiva.</span>'}</div></div></div></details>
-      ${ctx}
+      <details class="detail pl-dica"><summary><span class="caret">▶</span> Dica para o técnico</summary><div class="body"><div class="dtl-dica"><span class="dtl-k">Dica para o técnico · base legal detalhada</span><div>${it.dicaPlano ? it.dicaPlano : '<span class="pl-dica-ph">Conteúdo em preparação — a orientação e a base legal detalhada serão adicionadas em breve para auxiliar no preenchimento da ação corretiva.</span>'}</div></div>${ctxInner}</div></details>
       ${isCipa(it)?cipaTableFor(state.company):''}${(isCipa(it)||isSesmt(it))?sesmtTableFor(state.company):''}
       <label class="pl-reclab">Ação Corretiva</label>
       <textarea class="pl-rec" rows="3" oninput="autoGrow(this)" onchange="setPlan(${it.n},'rec',this.value)" placeholder="Descreva a ação corretiva para o cliente…">${rec.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>
@@ -2222,7 +2220,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v85 · 24/11/2026';
+const APP_VERSION = 'v86 · 24/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
