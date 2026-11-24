@@ -246,6 +246,19 @@ body{
 .pl-acao{font-size:12px; color:var(--muted); line-height:1.45; margin:0 0 11px}
 .pl-acao b{color:var(--text); font-weight:600}
 .pl-fields{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.pl-reclab{display:block; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:2px 0 5px}
+.pl-rec{width:100%; border:1px solid var(--line); border-radius:var(--r-sm); padding:10px 11px; font-family:var(--body); font-size:12.5px; line-height:1.5; color:var(--text); background:var(--surface); resize:vertical; min-height:70px; box-sizing:border-box; overflow:hidden}
+.pl-rec:focus{outline:none; border-color:var(--brand-2)}
+/* Relatório do plano de ação (PDF) */
+.doc .pa-intro{margin:4px 0 16px}
+.doc .pa-item{border:1px solid var(--line); border-left:4px solid var(--brand-2); border-radius:8px; padding:12px 14px; margin:0 0 12px; page-break-inside:avoid}
+.doc .pa-h{display:flex; align-items:center; gap:10px; margin-bottom:7px; flex-wrap:wrap}
+.doc .pa-n{min-width:24px; height:24px; border-radius:6px; background:var(--brand); color:#fff; font-weight:700; font-size:12px; display:inline-flex; align-items:center; justify-content:center}
+.doc .pa-g{font-size:11px; color:#6B7A72; font-weight:700; text-transform:uppercase; letter-spacing:.03em}
+.doc .pa-q{font-weight:600; margin:0 0 7px}
+.doc .pa-r{color:#24322D; line-height:1.5}
+.doc .pa-r .lab{font-weight:700; color:var(--brand)}
+.doc .rep-foot-credit{margin-top:16px; font-size:10px; color:#93A099; text-align:center}
 .cipa-tab{margin:9px 0;border:1px solid #CFE9DD;border-radius:9px;overflow:hidden;background:#F6FBF9}
 .cipa-tab .cipa-h{background:var(--brand-2);color:#fff;font-size:11px;font-weight:700;letter-spacing:.02em;padding:7px 10px}
 .cipa-tab table{width:100%;border-collapse:collapse;font-size:12.5px}
@@ -456,7 +469,7 @@ body{
 /* Durante a geração do PDF no app (html2canvas), captura o relatório em largura de documento
    (~A4 útil) em vez da largura do celular, para o texto não sair ampliado. */
 body.pdf-export .app{ max-width:718px !important }
-body.pdf-export #report{ border:none !important; box-shadow:none !important; border-radius:0 !important }
+body.pdf-export #report, body.pdf-export #plan-report{ border:none !important; box-shadow:none !important; border-radius:0 !important }
 @page{ margin:0 } /* remove cabeçalho (data/título) e rodapé (URL/página) adicionados pelo navegador */
 @media print{
   body{background:#fff}
@@ -555,7 +568,13 @@ body.pdf-export #report{ border:none !important; box-shadow:none !important; bor
 
   <!-- ===== PLANO ===== -->
   <section class="screen" id="scr-plano">
-    <div class="scr-head"><h1>Plano de ação</h1><p>Gerado automaticamente a partir das não conformidades. Edite responsável, prazo e status.</p></div>
+    <div class="scr-head"><h1>Plano de ação</h1><p>Gerado a partir das não conformidades. Ajuste a recomendação de cada item e gere o plano em PDF para entregar ao cliente.</p></div>
+    <div class="rep-toolbar">
+      <button class="btn btn-primary" onclick="gerarPlanoPDF()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2M6 14h12v8H6z"/></svg>
+        Gerar PDF do plano
+      </button>
+    </div>
     <div id="plan-list"></div>
   </section>
 
@@ -570,6 +589,8 @@ body.pdf-export #report{ border:none !important; box-shadow:none !important; bor
     <div class="doc" id="report"></div>
     <p class="rep-note">Toque em <b>Imprimir / PDF</b>. No navegador (Safari/Chrome) abre a impressão — escolha “Salvar como PDF”. No <b>app instalado no iPhone</b>, o PDF é gerado dentro do app e você escolhe <b>salvar em Arquivos ou enviar</b> pela folha de compartilhamento. No sistema final, este relatório é exportado em .docx no padrão Brantech.</p>
   </section>
+
+  <div class="doc" id="plan-report" style="display:none"></div>
 
   <nav class="nav" id="nav"></nav>
   <div class="toast" id="toast"></div>
@@ -1667,17 +1688,19 @@ function iosStandalone(){ try{ var ios=/iPad|iPhone|iPod/.test(navigator.userAge
 function inAppBrowser(){ return /(WhatsApp|Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger)/i.test(navigator.userAgent||''); }
 function sanitizeName(s){ try{ return (s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^A-Za-z0-9]+/g,'_').replace(/^_+|_+$/g,'').slice(0,40); }catch(e){ return (s||'').replace(/[^A-Za-z0-9]+/g,'_').slice(0,40); } }
 function showPdfLoading(on){ var o=document.getElementById('pdf-loading'); if(on){ if(!o){ o=document.createElement('div'); o.id='pdf-loading'; o.innerHTML='<div class="pl-box"><div class="pl-spin"></div><div class="pl-txt">Gerando PDF…</div></div>'; document.body.appendChild(o); } o.style.display='flex'; } else if(o){ o.style.display='none'; } }
-async function gerarPdfApp(){
+async function gerarPdfApp(opts){
+  opts=opts||{}; var renderFn=opts.render||renderReport; var nodeId=opts.nodeId||'report'; var prefix=opts.prefix||'Auditoria_SST'; var shareTitle=opts.title||'Relatório de Auditoria SST';
   if(!(window.jspdf&&window.jspdf.jsPDF)||typeof window.html2canvas!=='function'){ alert('O gerador de PDF não carregou. Recarregue o app (com internet) e tente novamente.'); return; }
   showPdfLoading(true);
   document.body.classList.add('pdf-export'); // captura em largura de documento (evita texto ampliado)
+  var _n0=document.getElementById(nodeId); var _wasHidden=_n0&&_n0.style.display==='none'; if(_n0) _n0.style.display='block';
   try{
-    await renderReport();
+    await renderFn();
     await new Promise(function(r){ setTimeout(r,220); });
-    var node=document.getElementById('report');
-    if(!node){ document.body.classList.remove('pdf-export'); showPdfLoading(false); return; }
+    var node=document.getElementById(nodeId);
+    if(!node){ document.body.classList.remove('pdf-export'); if(_wasHidden&&_n0) _n0.style.display='none'; showPdfLoading(false); return; }
     var canvas=await window.html2canvas(node,{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,scrollX:0,scrollY:-window.scrollY,windowWidth:760});
-    document.body.classList.remove('pdf-export');
+    document.body.classList.remove('pdf-export'); if(_wasHidden) node.style.display='none';
     var jsPDF=window.jspdf.jsPDF; var pdf=new jsPDF({unit:'mm',format:'a4',compress:true});
     var pw=210, ph=297, mg=10, imgW=pw-mg*2;
     var pxPerMm=canvas.width/imgW;
@@ -1710,17 +1733,17 @@ async function gerarPdfApp(){
       y+=sliceH; page++;
     }
     var c=state.company||{}; var dt=c.data?('_'+c.data.split('-').reverse().join('-')):'';
-    var fname='Auditoria_SST_'+(sanitizeName(c.razao)||'relatorio')+dt+'.pdf';
+    var fname=prefix+'_'+(sanitizeName(c.razao)||'relatorio')+dt+'.pdf';
     var blob=pdf.output('blob');
     showPdfLoading(false);
     var file=null; try{ file=new File([blob],fname,{type:'application/pdf'}); }catch(e){}
     var isTouch=((navigator.maxTouchPoints||0)>0)||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
     // No computador: baixa (salva) o PDF direto. No celular: abre o menu Compartilhar (que inclui "Salvar em Arquivos").
     if(isTouch && file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
-      try{ await navigator.share({files:[file],title:'Relatório de Auditoria SST'}); return; }catch(e){ if(e&&e.name==='AbortError') return; }
+      try{ await navigator.share({files:[file],title:shareTitle}); return; }catch(e){ if(e&&e.name==='AbortError') return; }
     }
     var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); setTimeout(function(){ try{URL.revokeObjectURL(url);a.remove();}catch(e){} },5000);
-  }catch(e){ document.body.classList.remove('pdf-export'); showPdfLoading(false); alert('Não foi possível gerar o PDF: '+((e&&e.message)||e)); }
+  }catch(e){ document.body.classList.remove('pdf-export'); if(_wasHidden&&_n0) _n0.style.display='none'; showPdfLoading(false); alert('Não foi possível gerar o PDF: '+((e&&e.message)||e)); }
 }
 var EMPTY_STATE='<div class="empty-state">Nenhuma auditoria aberta.<br>Toque em <b>+ Nova auditoria</b> na aba <b>Empresa</b> para começar.</div>';
 function renderAudit(){ if(noAud()){ var _e=document.getElementById('audit-list'); if(_e)_e.innerHTML=EMPTY_STATE; var _pc=document.getElementById('prog-count'); if(_pc)_pc.textContent='—'; var _pi=document.getElementById('prog-idx'); if(_pi)_pi.textContent=''; var _pb=document.getElementById('prog-bar'); if(_pb)_pb.innerHTML=''; return; }
@@ -1869,31 +1892,86 @@ function renderPlano(){ if(noAud()){ var _e=document.getElementById('plan-list')
   }
   const pcls={'Alta':'alta','Média':'media','Baixa':'baixa'};
   let h='';
-  ncs.forEach(it=>{
+  ncs.forEach((it,idx)=>{
     const pl=plan[it.n]||{};
     const isPC=answers[it.n]==='PC';
     const cls = isPC?'pc':(hasPri?pcls[it.pri]:'baixa');
     const pcTag = isPC?`<span class="pl-badge pc">Parcial</span>`:'';
-    const top = hasPri
-      ? `<span class="pl-num">Item ${it.n}</span>${isPC?pcTag:`<span class="pl-badge ${pcls[it.pri]}">${it.pri}</span>`}${it.nr?`<span class="pl-nr">${it.nr}</span>`:''}`
-      : `<span class="pl-num">Item ${it.n}</span>${pcTag}<span class="pl-nr" style="margin-left:auto">${(MODELS[state.model].blocks[it.b]||'').replace(/^\d+\.\s*/,'')}</span>`;
-    const riscoLine = it.risco?`<p class="pl-acao"><b>Risco potencial:</b> ${it.risco}</p>`:'';
+    const grupo=(MODELS[state.model].blocks[it.b]||'').replace(/^\d+\.\s*/,'');
+    const rec=(pl.rec!=null?pl.rec:(it.acao||''));
+    const prioTag = (hasPri && !isPC)?`<span class="pl-badge ${pcls[it.pri]}">${it.pri}</span>`:'';
     h+=`<div class="pl-item ${cls}">
-      <div class="pl-top">${top}</div>
+      <div class="pl-top"><span class="pl-num">${idx+1}</span>${pcTag}${prioTag}<span class="pl-nr" style="margin-left:auto">${grupo}</span></div>
       <p class="pl-req">${it.req}</p>
-      ${riscoLine}
-      <p class="pl-acao"><b>${it.risco?'Recomendação:':'Ação corretiva:'}</b> ${it.acao}</p>
       ${isCipa(it)?cipaTableFor(state.company):''}${(isCipa(it)||isSesmt(it))?sesmtTableFor(state.company):''}
-      <div class="pl-fields">
-        <div class="fld"><label>Responsável</label><input type="text" value="${(pl.resp||'A definir').replace(/"/g,'&quot;')}" onchange="setPlan(${it.n},'resp',this.value)"></div>
-        <div class="fld"><label>Prazo</label><input type="date" value="${pl.prazo||''}" onchange="setPlan(${it.n},'prazo',this.value)"></div>
-        <div class="fld full"><label>Status</label><select onchange="setPlan(${it.n},'status',this.value)">${['Pendente','Em andamento','Concluído'].map(o=>`<option ${((pl.status||'Pendente')===o)?'selected':''}>${o}</option>`).join('')}</select></div>
-      </div>
+      <label class="pl-reclab">Recomendação / ação</label>
+      <textarea class="pl-rec" rows="3" oninput="autoGrow(this)" onchange="setPlan(${it.n},'rec',this.value)" placeholder="Descreva a ação recomendada para o cliente…">${rec.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>
     </div>`;
   });
   el.innerHTML=h;
+  el.querySelectorAll('.pl-rec').forEach(t=>autoGrow(t));
 }
 function setPlan(n,k,v){ plan[n]=plan[n]||{}; plan[n][k]=v; save(); }
+function autoGrow(t){ t.style.height='auto'; t.style.height=(t.scrollHeight+2)+'px'; }
+
+/* ============================================================
+   RENDER — Relatório do Plano de Ação (entrega ao cliente)
+   ============================================================ */
+function renderPlanReport(){
+  const M=MODELS[state.model]; const hasPri=M.hasPriority;
+  const c=state.company||{};
+  const dataFmt = c.data ? c.data.split('-').reverse().join('/') : '[Data]';
+  const consolidacao = new Date().toLocaleDateString('pt-BR');
+  const rank=it=>answers[it.n]==='NC'?0:1;
+  const ncs=ITEMS.filter(it=>answers[it.n]==='NC' || answers[it.n]==='PC');
+  if(hasPri){ const order={Alta:0,'Média':1,Baixa:2}; ncs.sort((a,b)=>rank(a)-rank(b)||order[a.pri]-order[b.pri]||a.n-b.n); }
+  else ncs.sort((a,b)=>rank(a)-rank(b)||a.n-b.n);
+  let itensHtml='';
+  if(ncs.length===0){ itensHtml='<p class="pa-intro"><em>Nenhuma pendência registrada até o momento.</em></p>'; }
+  else {
+    ncs.forEach((it,idx)=>{
+      const pl=plan[it.n]||{};
+      const isPC=answers[it.n]==='PC';
+      const grupo=(MODELS[state.model].blocks[it.b]||'').replace(/^\d+\.\s*/,'');
+      const rec=(pl.rec!=null?pl.rec:(it.acao||'')).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\n/g,'<br/>');
+      itensHtml+=`<div class="pa-item">
+        <div class="pa-h"><span class="pa-n">${idx+1}</span><span class="pa-g">${grupo}</span>${isPC?'<span class="pbadge pc">Parcialmente conforme</span>':''}</div>
+        <div class="pa-q">${it.req}</div>
+        <div class="pa-r"><span class="lab">Ação recomendada:</span> ${rec||'<em>A definir pelo técnico.</em>'}</div>
+        ${isCipa(it)?cipaTableFor(c):''}${(isCipa(it)||isSesmt(it))?sesmtTableFor(c):''}
+      </div>`;
+    });
+  }
+  const totalLine = ncs.length ? `Foram identificadas <b>${ncs.length}</b> ${plN(ncs.length,'pendência','pendências')} a regularizar, listadas a seguir por ordem de prioridade.` : '';
+  document.getElementById('plan-report').innerHTML=`
+    <div class="rep-hdr">
+      <img class="brand-logo rep-logo" src="${LOGO}" alt="Brantech — Engenharia de Segurança do Trabalho">
+      <div class="ey">Plano de ação</div>
+      <h1>Plano de Ação — Segurança e Saúde no Trabalho</h1>
+      <div class="sub">Ações recomendadas para regularização</div>
+    </div>
+    <div class="rep-meta">
+      <div><span class="k">Empresa: ${c.razao||'[Razão social]'}</span></div>
+      <div>CNPJ: ${c.cnpj||'[CNPJ]'}</div>
+      <div>Endereço: ${c.endereco||'[Endereço]'}</div>
+      <div>Atividade principal / CNAE: ${c.atividade||'—'}</div>
+      <div>Nº de empregados: ${c.empregados||'—'}</div>
+      <div>Grau de risco: ${c.grau||'—'}</div>
+      <div>Data da auditoria de origem: ${dataFmt}</div>
+      <div>Emissão deste plano: ${consolidacao}</div>
+      <div>Responsável técnico: ${c.auditor||'[Auditor]'}${c.cargo?' — '+c.cargo:''}</div>
+    </div>
+    <p class="pa-intro">Este plano de ação reúne as pendências identificadas na auditoria de Segurança e Saúde no Trabalho e as ações recomendadas para a sua regularização. Cada item indica o tema a que se refere e a ação que deve ser adotada pela empresa. ${totalLine}</p>
+    ${itensHtml}
+    <div class="rep-foot-credit">Documento técnico de referência — Evolue / Brantech · Emitido em ${consolidacao}.</div>`;
+}
+function gerarPlanoPDF(){
+  if(noAud()){ alert('Abra uma auditoria primeiro.'); return; }
+  var ncs=ITEMS.filter(function(it){return answers[it.n]==='NC'||answers[it.n]==='PC';});
+  if(!ncs.length){ alert('Não há pendências (Não Conforme ou Parcial) para gerar o plano de ação.'); return; }
+  if(window.jspdf&&window.jspdf.jsPDF&&typeof window.html2canvas==='function'){ gerarPdfApp({render:renderPlanReport, nodeId:'plan-report', prefix:'Plano_de_Acao'}); return; }
+  alert('O gerador de PDF não carregou. Recarregue o app (com internet) e tente novamente.');
+}
 
 /* ============================================================
    RENDER — Relatório executivo
@@ -2065,7 +2143,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v74 · 24/11/2026';
+const APP_VERSION = 'v75 · 24/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
