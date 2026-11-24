@@ -248,6 +248,10 @@ body{
 .pl-fields{display:grid; grid-template-columns:1fr 1fr; gap:8px}
 .pl-dica{padding-left:0 !important; margin:4px 0 12px}
 .pl-dica .pl-dica-ph{font-style:italic; color:var(--faint)}
+.pl-rref{font-size:10.5px; color:var(--faint); font-weight:600; margin:-2px 0 7px}
+.pl-ctx{padding-left:0 !important; margin:0 0 12px}
+.pl-ctx .pl-ctx-row{margin:0 0 10px} .pl-ctx .pl-ctx-row:last-child{margin-bottom:0}
+.pl-ctx .dtl-k{display:block; font-size:10px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--brand-2); margin-bottom:4px}
 .pl-reclab{display:block; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:2px 0 5px}
 .pl-rec{width:100%; border:1px solid var(--line); border-radius:var(--r-sm); padding:10px 11px; font-family:var(--body); font-size:12.5px; line-height:1.5; color:var(--text); background:var(--surface); resize:vertical; min-height:70px; box-sizing:border-box; overflow:hidden}
 .pl-rec:focus{outline:none; border-color:var(--brand-2)}
@@ -1939,6 +1943,10 @@ function renderPlano(){ if(noAud()){ var _e=document.getElementById('plan-list')
     return;
   }
   const pcls={'Alta':'alta','Média':'media','Baixa':'baixa'};
+  // Mapa: nº do item no RELATÓRIO (mesma ordem/numeração do relatório) — só para referência na tela
+  const _det=ITEMS.filter(x=>answers[x.n]==='C'||answers[x.n]==='PC'||answers[x.n]==='NC');
+  const repMap={}; let _rs=0;
+  (MODELS[state.model].blocks||[]).forEach((bn,bi)=>{ _det.filter(x=>x.b===bi).forEach(x=>{ _rs++; repMap[x.n]=_rs; }); });
   let h='';
   ncs.forEach((it,idx)=>{
     const pl=plan[it.n]||{};
@@ -1948,10 +1956,16 @@ function renderPlano(){ if(noAud()){ var _e=document.getElementById('plan-list')
     const grupo=(MODELS[state.model].blocks[it.b]||'').replace(/^\d+\.\s*/,'');
     const rec=(pl.rec!=null?pl.rec:(it.acao||''));
     const prioTag = (hasPri && !isPC)?`<span class="pl-badge ${pcls[it.pri]}">${it.pri}</span>`:'';
+    const repN = repMap[it.n];
+    const _ob=(obs[it.n]||'').trim();
+    const _at=attachChipsRO(it.n);
+    const ctx = (_ob||_at) ? `<details class="detail pl-ctx"><summary><span class="caret">▶</span> Contexto da auditoria</summary><div class="body">${_ob?`<div class="pl-ctx-row"><span class="dtl-k">Constatação e Evidência</span><div>${_ob.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div></div>`:''}${_at?`<div class="pl-ctx-row"><span class="dtl-k">Anexos da auditoria</span>${_at}</div>`:''}</div></details>` : '';
     h+=`<div class="pl-item ${cls}">
       <div class="pl-top"><span class="pl-num">${idx+1}</span>${pcTag}${prioTag}<span class="pl-nr" style="margin-left:auto">${grupo}</span></div>
+      ${repN?`<div class="pl-rref">Item ${repN} no relatório</div>`:''}
       <p class="pl-req">${it.req}</p>
       <details class="detail pl-dica"><summary><span class="caret">▶</span> Dica para o técnico</summary><div class="body"><div class="dtl-dica"><span class="dtl-k">Dica para o técnico · base legal detalhada</span><div>${it.dicaPlano ? it.dicaPlano : '<span class="pl-dica-ph">Conteúdo em preparação — a orientação e a base legal detalhada serão adicionadas em breve para auxiliar no preenchimento da ação corretiva.</span>'}</div></div></div></details>
+      ${ctx}
       ${isCipa(it)?cipaTableFor(state.company):''}${(isCipa(it)||isSesmt(it))?sesmtTableFor(state.company):''}
       <label class="pl-reclab">Ação Corretiva</label>
       <textarea class="pl-rec" rows="3" oninput="autoGrow(this)" onchange="setPlan(${it.n},'rec',this.value)" placeholder="Descreva a ação corretiva para o cliente…">${rec.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>
@@ -1959,6 +1973,25 @@ function renderPlano(){ if(noAud()){ var _e=document.getElementById('plan-list')
   });
   el.innerHTML=h;
   el.querySelectorAll('.pl-rec').forEach(t=>autoGrow(t));
+  hydrateThumbsPlano();
+}
+function attachChipsRO(n){
+  const list=attach[n]||[];
+  if(!list.length) return '';
+  return '<div class="attach-list">'+list.map(a=>{
+    const isImg=(a.type||'').indexOf('image')===0;
+    const u=thumbURL[a.id];
+    const thumb = isImg&&u ? `<img src="${u}">` : `<span class="fi">${isImg?'IMG':'PDF'}</span>`;
+    const open = u ? `href="${u}" target="_blank" rel="noopener"` : 'href="#" onclick="return false"';
+    const nm=(a.name||'documento').replace(/"/g,'&quot;').replace(/</g,'&lt;');
+    return `<div class="att"><a class="att-view" ${open}>${thumb}<span class="att-name">${nm}</span></a></div>`;
+  }).join('')+'</div>';
+}
+async function hydrateThumbsPlano(){
+  const ids=[]; Object.values(attach||{}).forEach(arr=>(arr||[]).forEach(a=>ids.push(a.id)));
+  let any=false;
+  for(const id of ids){ if(thumbURL[id])continue; try{ const rec=await idbGet(id); if(rec&&rec.blob){ thumbURL[id]=URL.createObjectURL(rec.blob); any=true; } }catch(e){} }
+  if(any && document.getElementById('plan-list')) renderPlano();
 }
 function setPlan(n,k,v){ plan[n]=plan[n]||{}; plan[n][k]=v; save(); }
 function autoGrow(t){ t.style.height='auto'; t.style.height=(t.scrollHeight+2)+'px'; }
@@ -2189,7 +2222,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v84 · 24/11/2026';
+const APP_VERSION = 'v85 · 24/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
