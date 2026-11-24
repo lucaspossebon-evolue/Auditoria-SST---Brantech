@@ -412,6 +412,7 @@ body{
 #pdf-preview .pv-foot .btn{flex:1}
 .detail .dtl-sec{margin:0 0 9px} .detail .dtl-sec:last-child{margin-bottom:0}
 .detail .dtl-sec>div{white-space:pre-line}
+.detail .dtl-risco .rp-ln{margin:0 0 6px} .detail .dtl-risco .rp-ln:last-child{margin-bottom:0} .detail .dtl-risco b{color:var(--brand-ink)}
 .detail .dtl-k{display:block;font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--brand-2);margin-bottom:3px}
 .detail .dtl-dica{background:#EFF8F3;border:1px solid #CFE9DD;border-left:3px solid #1FA97F;padding:9px 11px;border-radius:9px}
 .detail .dtl-dica .dtl-k{color:#178A63}
@@ -1628,7 +1629,14 @@ function sesmtTableFor(co){
 function itemDetail(it){
   let rows='';
   if(it.dica) rows+=`<div class="dtl-sec dtl-dica"><span class="dtl-k">Como verificar · o que analisar</span><div>${it.dica}</div></div>`;
-  if(it.risco) rows+=`<div class="dtl-sec"><span class="dtl-k">Risco potencial</span><div>${it.risco}</div></div>`;
+  if(it.risco){
+    var rp=it.risco.split('\n').map(function(ln){
+      var mt=ln.match(/^(RISCO|BASE LEGAL|PENALIDADE):\s*([\s\S]*)$/i);
+      if(mt){ var lk=mt[1].toUpperCase(); var lab=lk==='RISCO'?'Risco Potencial':(lk==='BASE LEGAL'?'Base legal / Requisitos Normativos':'Penalidade'); return '<div class="rp-ln"><b>'+lab+':</b> '+mt[2]+'</div>'; }
+      return ln.trim()?'<div class="rp-ln">'+ln+'</div>':'';
+    }).join('');
+    rows+=`<div class="dtl-sec dtl-risco">${rp}</div>`;
+  }
   if(it.doc) rows+=`<div class="dtl-sec"><span class="dtl-k">Documento esperado</span><div>${it.doc}</div></div>`;
   if(it.nr||it.org) rows+=`<div class="orgs">${it.nr?`<span class="org" style="background:#E4EFEA;border-color:#C6E0D3;color:var(--brand-2)">${it.nr}</span>`:''}${(it.org||'').split(' / ').map(o=>`<span class="org">${o}</span>`).join('')}</div>`;
   if(!rows) return '';
@@ -1818,7 +1826,7 @@ function renderAudit(){ if(noAud()){ var _e=document.getElementById('audit-list'
           ${attachChips(it.n)}
         </div>
         <details class="obsbox${needObs?' obs-req':''}${obsMissing?' obs-missing':''}" ${(needObs||hasObs)?'open':''}>
-          <summary class="obs-sum"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg> Observação do técnico${needObs?' <span class="req-ast">obrigatória</span>':''}${hasObs?'<span class="obs-dot" title="há observação"></span>':''}</summary>
+          <summary class="obs-sum"><svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.1 2.1 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg> Constatação e Evidência${needObs?' <span class="req-ast">obrigatória</span>':''}${hasObs?'<span class="obs-dot" title="há observação"></span>':''}</summary>
           ${obsMissing?'<div class="obs-warn">⚠ Justifique a não conformidade para concluir a auditoria.</div>':''}
           <textarea class="obs-ta" rows="2" placeholder="${needObs?'Descreva a não conformidade observada (obrigatório)…':'Anote o que observou neste item — sai no relatório…'}" oninput="obs[${it.n}]=this.value" onchange="save();refreshObs(${it.n})">${(obs[it.n]||'').replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>
         </details>
@@ -2176,7 +2184,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v79 · 24/11/2026';
+const APP_VERSION = 'v80 · 24/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
