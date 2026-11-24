@@ -1714,7 +1714,9 @@ async function gerarPdfApp(){
     var blob=pdf.output('blob');
     showPdfLoading(false);
     var file=null; try{ file=new File([blob],fname,{type:'application/pdf'}); }catch(e){}
-    if(file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
+    var isTouch=((navigator.maxTouchPoints||0)>0)||/Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent||'');
+    // No computador: baixa (salva) o PDF direto. No celular: abre o menu Compartilhar (que inclui "Salvar em Arquivos").
+    if(isTouch && file && navigator.canShare && navigator.canShare({files:[file]}) && navigator.share){
       try{ await navigator.share({files:[file],title:'Relatório de Auditoria SST'}); return; }catch(e){ if(e&&e.name==='AbortError') return; }
     }
     var url=URL.createObjectURL(blob); var a=document.createElement('a'); a.href=url; a.download=fname; document.body.appendChild(a); a.click(); setTimeout(function(){ try{URL.revokeObjectURL(url);a.remove();}catch(e){} },5000);
@@ -2063,7 +2065,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v73 · 23/11/2026';
+const APP_VERSION = 'v74 · 24/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
