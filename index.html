@@ -1950,8 +1950,8 @@ function renderPlano(){ if(noAud()){ var _e=document.getElementById('plan-list')
       <div class="pl-top"><span class="pl-num">${idx+1}</span>${pcTag}${prioTag}<span class="pl-nr" style="margin-left:auto">${grupo}</span></div>
       <p class="pl-req">${it.req}</p>
       ${isCipa(it)?cipaTableFor(state.company):''}${(isCipa(it)||isSesmt(it))?sesmtTableFor(state.company):''}
-      <label class="pl-reclab">Recomendação / ação</label>
-      <textarea class="pl-rec" rows="3" oninput="autoGrow(this)" onchange="setPlan(${it.n},'rec',this.value)" placeholder="Descreva a ação recomendada para o cliente…">${rec.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>
+      <label class="pl-reclab">Ação Corretiva</label>
+      <textarea class="pl-rec" rows="3" oninput="autoGrow(this)" onchange="setPlan(${it.n},'rec',this.value)" placeholder="Descreva a ação corretiva para o cliente…">${rec.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>
     </div>`;
   });
   el.innerHTML=h;
@@ -1983,7 +1983,7 @@ function renderPlanReport(){
       itensHtml+=`<div class="pa-item">
         <div class="pa-h"><span class="pa-n">${idx+1}</span><span class="pa-g">${grupo}</span>${isPC?'<span class="pbadge pc">Parcialmente conforme</span>':''}</div>
         <div class="pa-q">${it.req}</div>
-        <div class="pa-r"><span class="lab">Ação recomendada:</span> ${rec||'<em>A definir pelo técnico.</em>'}</div>
+        <div class="pa-r"><span class="lab">Ação Corretiva:</span> ${rec||'<em>A definir pelo técnico.</em>'}</div>
         ${isCipa(it)?cipaTableFor(c):''}${(isCipa(it)||isSesmt(it))?sesmtTableFor(c):''}
       </div>`;
     });
@@ -2184,7 +2184,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v80 · 24/11/2026';
+const APP_VERSION = 'v81 · 24/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
