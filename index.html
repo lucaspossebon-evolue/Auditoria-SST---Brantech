@@ -2046,22 +2046,20 @@ async function renderReport(){ if(noAud()){ var _e=document.getElementById('repo
       ncHtml+=`<div class="nc-block-title">${bn}</div>`;
       inBlock.forEach(it=>{
         seq++;
-        const ans=answers[it.n]; const st=stMap[ans]; const isNCPC=(ans==='NC'||ans==='PC');
+        const ans=answers[it.n]; const st=stMap[ans];
         let rows='';
         rows+=`<div class="row"><span class="lab">Pergunta Auditada:</span> ${it.req}</div>`;
-        if(isNCPC){
-          if(it.doc) rows+=`<div class="row"><span class="lab">Documento esperado:</span> ${it.doc}</div>`;
-          if(it.org) rows+=`<div class="row"><span class="lab">Pode ser exigido por:</span> ${it.org}</div>`;
-          if(it.risco){
-            it.risco.split('\n').forEach(function(ln){
-              var mt=ln.match(/^(RISCO|BASE LEGAL|PENALIDADE):\s*([\s\S]*)$/i);
-              if(mt){ var lk=mt[1].toUpperCase(); var lab=lk==='RISCO'?'Risco Potencial':(lk==='BASE LEGAL'?'Base legal / Requisitos Normativos':'Penalidade'); rows+='<div class="row rp-sub"><span class="lab">'+lab+':</span> '+mt[2]+'</div>'; }
-              else if(ln.trim()){ rows+='<div class="row rp-sub">'+ln+'</div>'; }
-            });
-          }
+        if(it.doc) rows+=`<div class="row"><span class="lab">Documento esperado:</span> ${it.doc}</div>`;
+        if(it.org) rows+=`<div class="row"><span class="lab">Pode ser exigido por:</span> ${it.org}</div>`;
+        if(it.risco){
+          it.risco.split('\n').forEach(function(ln){
+            var mt=ln.match(/^(RISCO|BASE LEGAL|PENALIDADE):\s*([\s\S]*)$/i);
+            if(mt){ var lk=mt[1].toUpperCase(); var lab=lk==='RISCO'?'Risco Potencial':(lk==='BASE LEGAL'?'Base legal / Requisitos Normativos':'Penalidade'); rows+='<div class="row rp-sub"><span class="lab">'+lab+':</span> '+mt[2]+'</div>'; }
+            else if(ln.trim()){ rows+='<div class="row rp-sub">'+ln+'</div>'; }
+          });
         }
         const _ob=(obs[it.n]||'').trim(); if(_ob) rows+=`<div class="row row-obs"><span class="lab">Constatação e Evidência:</span> ${_ob.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</div>`;
-        ncHtml+=`<div class="nc ${st.s}"><div class="nc-h"><span class="nc-id">Item ${seq}</span><span class="pbadge ${st.b}">${st.lab}</span></div><dl>${rows}</dl>${isNCPC&&isCipa(it)?cipaTableFor(state.company):''}${isNCPC&&(isCipa(it)||isSesmt(it))?sesmtTableFor(state.company):''}${evBlock(it.n)}</div>`;
+        ncHtml+=`<div class="nc ${st.s}"><div class="nc-h"><span class="nc-id">Item ${seq}</span><span class="pbadge ${st.b}">${st.lab}</span></div><dl>${rows}</dl>${isCipa(it)?cipaTableFor(state.company):''}${(isCipa(it)||isSesmt(it))?sesmtTableFor(state.company):''}${evBlock(it.n)}</div>`;
       });
     });
   }
@@ -2178,7 +2176,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v78 · 24/11/2026';
+const APP_VERSION = 'v79 · 24/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
