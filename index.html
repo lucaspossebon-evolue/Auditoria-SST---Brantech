@@ -2047,7 +2047,7 @@ function renderPlanReport(){
     </div>
     <p class="pa-intro">Este plano de ação reúne as pendências identificadas na auditoria de Segurança e Saúde no Trabalho e as ações recomendadas para a sua regularização. Cada item indica o tema a que se refere e a ação que deve ser adotada pela empresa. ${totalLine}</p>
     ${itensHtml}
-    <div class="rep-credit">Sistema de auditoria desenvolvido por Evolue — Treinamento e Desenvolvimento</div>`;
+`;
 }
 function gerarPlanoPDF(){
   if(noAud()){ alert('Abra uma auditoria primeiro.'); return; }
@@ -2203,7 +2203,7 @@ async function renderReport(){ if(noAud()){ var _e=document.getElementById('repo
     <p>Este relatório tem caráter técnico e não substitui a análise jurídica individualizada. Recomenda-se sua discussão com os responsáveis pelo departamento jurídico e com os profissionais habilitados ou responsáveis pelas áreas pertinentes, incluindo o SESMT (se houver), medicina do trabalho, contabilidade e departamento pessoal, conforme a natureza de cada apontamento.</p>
     <p>Recomenda-se que os responsáveis pelas áreas envolvidas, em conjunto com o responsável legal pela empresa, elaborem e aprovem um plano de ação para o tratamento das pendências. O plano deverá estabelecer, para cada item, as medidas a serem adotadas, o responsável pela execução, o prazo compatível com a gravidade do risco e as condições de exposição, os recursos necessários, os controles provisórios aplicáveis, as evidências de execução e os critérios de verificação da eficácia.</p>
     <p>Por fim, recomenda-se o acompanhamento periódico do plano de ação, com registro das providências adotadas e avaliação de seus resultados. O encerramento de cada pendência deverá considerar tanto a comprovação da execução das medidas quanto a verificação de sua eficácia, promovendo a continuidade das ações de prevenção e a proteção da segurança e da saúde dos trabalhadores.</p>
-    <div class="rep-credit">Sistema de auditoria desenvolvido por Evolue — Treinamento e Desenvolvimento</div>`;
+`;
 }
 
 
@@ -2222,7 +2222,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v88 · 24/11/2026';
+const APP_VERSION = 'v89 · 24/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
