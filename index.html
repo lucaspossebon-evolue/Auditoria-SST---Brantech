@@ -2011,7 +2011,7 @@ function renderPlanReport(){
     </div>
     <p class="pa-intro">Este plano de ação reúne as pendências identificadas na auditoria de Segurança e Saúde no Trabalho e as ações recomendadas para a sua regularização. Cada item indica o tema a que se refere e a ação que deve ser adotada pela empresa. ${totalLine}</p>
     ${itensHtml}
-    <div class="rep-foot-credit">Documento técnico de referência — Evolue / Brantech · Emitido em ${consolidacao}.</div>`;
+    <div class="rep-credit">Sistema de auditoria desenvolvido por Evolue — Treinamento e Desenvolvimento</div>`;
 }
 function gerarPlanoPDF(){
   if(noAud()){ alert('Abra uma auditoria primeiro.'); return; }
@@ -2186,7 +2186,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v82 · 24/11/2026';
+const APP_VERSION = 'v83 · 24/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
