@@ -256,6 +256,8 @@ body{
 .pl-rec:focus{outline:none; border-color:var(--brand-2)}
 /* Relatório do plano de ação (PDF) */
 .doc .pa-intro{margin:4px 0 16px}
+/* Texto justificado (documento formal) — relatório de auditoria e do plano */
+.doc p, .doc .row, .doc .rp-sub, .doc .pa-q, .doc .pa-r{text-align:justify; text-justify:inter-word}
 .doc .pa-item{border:1px solid var(--line); border-left:4px solid var(--brand-2); border-radius:8px; padding:12px 14px; margin:0 0 12px; page-break-inside:avoid}
 .doc .pa-h{display:flex; align-items:center; gap:10px; margin-bottom:7px; flex-wrap:wrap}
 .doc .pa-n{min-width:24px; height:24px; border-radius:6px; background:var(--brand); color:#fff; font-weight:700; font-size:12px; display:inline-flex; align-items:center; justify-content:center}
@@ -2220,7 +2222,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v87 · 24/11/2026';
+const APP_VERSION = 'v88 · 24/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
