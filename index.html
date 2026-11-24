@@ -246,6 +246,8 @@ body{
 .pl-acao{font-size:12px; color:var(--muted); line-height:1.45; margin:0 0 11px}
 .pl-acao b{color:var(--text); font-weight:600}
 .pl-fields{display:grid; grid-template-columns:1fr 1fr; gap:8px}
+.pl-dica{padding-left:0 !important; margin:4px 0 12px}
+.pl-dica .pl-dica-ph{font-style:italic; color:var(--faint)}
 .pl-reclab{display:block; font-size:10px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); margin:2px 0 5px}
 .pl-rec{width:100%; border:1px solid var(--line); border-radius:var(--r-sm); padding:10px 11px; font-family:var(--body); font-size:12.5px; line-height:1.5; color:var(--text); background:var(--surface); resize:vertical; min-height:70px; box-sizing:border-box; overflow:hidden}
 .pl-rec:focus{outline:none; border-color:var(--brand-2)}
@@ -1949,6 +1951,7 @@ function renderPlano(){ if(noAud()){ var _e=document.getElementById('plan-list')
     h+=`<div class="pl-item ${cls}">
       <div class="pl-top"><span class="pl-num">${idx+1}</span>${pcTag}${prioTag}<span class="pl-nr" style="margin-left:auto">${grupo}</span></div>
       <p class="pl-req">${it.req}</p>
+      <details class="detail pl-dica"><summary><span class="caret">▶</span> Dica para o técnico</summary><div class="body"><div class="dtl-dica"><span class="dtl-k">Dica para o técnico · base legal detalhada</span><div>${it.dicaPlano ? it.dicaPlano : '<span class="pl-dica-ph">Conteúdo em preparação — a orientação e a base legal detalhada serão adicionadas em breve para auxiliar no preenchimento da ação corretiva.</span>'}</div></div></div></details>
       ${isCipa(it)?cipaTableFor(state.company):''}${(isCipa(it)||isSesmt(it))?sesmtTableFor(state.company):''}
       <label class="pl-reclab">Ação Corretiva</label>
       <textarea class="pl-rec" rows="3" oninput="autoGrow(this)" onchange="setPlan(${it.n},'rec',this.value)" placeholder="Descreva a ação corretiva para o cliente…">${rec.replace(/&/g,'&amp;').replace(/</g,'&lt;')}</textarea>
@@ -2186,7 +2189,7 @@ function setCompany(k,v){ state.company[k]=v; save(); renderTopIndex(); }
    NAV
    ============================================================ */
 /* Versão do app — ATUALIZE aqui a cada publicação (deve casar com o número do service worker em sw.js). */
-const APP_VERSION = 'v83 · 24/11/2026';
+const APP_VERSION = 'v84 · 24/11/2026';
 const NAV=[
   ['empresa','Empresa','M3 21h18 M5 21V7l7-4 7 4v14 M9 9h.01 M15 9h.01 M9 13h.01 M15 13h.01 M9 17h.01 M15 17h.01'],
   ['auditoria','Auditoria','M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
